@@ -10,7 +10,9 @@ import { ChatSummaryCard } from "@/components/chat/ChatSummaryCard";
 import { ChatMessageItem } from "@/components/chat/ChatMessageItem";
 import { ChatSuggestions } from "@/components/chat/ChatSuggestions";
 import { ChatInputForm } from "@/components/chat/ChatInputForm";
-import { Bot, Loader2 } from "lucide-react";
+import { ChatSidebar } from "@/components/chat/ChatSidebar";
+import { Bot, Loader2, Menu } from "lucide-react";
+import type { ChatSession } from "@/lib/types";
 
 // Dynamic suggestions will be generated based on context
 
@@ -30,26 +32,43 @@ export default function ChatPage() {
     "Summarize my unread emails",
     "Are there any urgent alerts?"
   ]);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlatform, setActivePlatform] = useState<string>("all");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     Promise.all([
-      api.getChatHistory(),
+      api.getChatSessions(),
       api.getBriefing(),
       api.getIntegrations(),
-    ]).then(([historyRes, briefingRes, integrationsRes]) => {
-      setMessages(historyRes.history);
+    ]).then(async ([sessionsRes, briefingRes, integrationsRes]) => {
       setItems(briefingRes.items);
       setIntegrations(integrationsRes.integrations);
-      setLoadingHistory(false);
-      
-      // Generate dynamic suggestions based on data
+
+      let initialSessions = sessionsRes.sessions;
+      if (initialSessions.length === 0) {
+        const newSession = await api.createChatSession();
+        initialSessions = [newSession];
+      }
+      setSessions(initialSessions);
+      setActiveChatId(initialSessions[0].id);
+
       if (briefingRes.items && briefingRes.items.length > 0) {
         generateSuggestions(briefingRes.items, "all");
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!activeChatId) return;
+    setLoadingHistory(true);
+    api.getChatHistory(activeChatId).then((res) => {
+      setMessages(res.history);
+      setLoadingHistory(false);
+    });
+  }, [activeChatId]);
 
   const generateSuggestions = (allItems: FeedItem[], platform: string) => {
     const filtered = platform === "all" ? allItems : allItems.filter(i => i.source === platform);
@@ -67,11 +86,11 @@ export default function ChatPage() {
     if (calendarEvent) {
       dynamicSuggestions.push(`Check my meeting: ${calendarEvent.title}?`);
     }
-    
+
     if (dynamicSuggestions.length < 3) {
-       dynamicSuggestions.push(`Summarize my ${platform === "all" ? "inbox" : platform} for today`);
+      dynamicSuggestions.push(`Summarize my ${platform === "all" ? "inbox" : platform} for today`);
     }
-    
+
     setSuggestions(dynamicSuggestions.slice(0, 3));
   };
 
@@ -85,12 +104,13 @@ export default function ChatPage() {
   }, [messages]);
 
   async function send(question: string) {
-    if (!question.trim() || sending) return;
+    if (!question.trim() || sending || !activeChatId) return;
     setInput("");
     setSending(true);
 
     const optimisticUser: ChatMessage = {
       id: `temp-${uuid()}`,
+      chatId: activeChatId,
       userId: "",
       role: "user",
       content: question,
@@ -99,9 +119,10 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, optimisticUser]);
 
     try {
-      const res = await api.askChat(question, activePlatform);
+      const res = await api.askChat(question, activeChatId, activePlatform);
       const assistantMsg: ChatMessage = {
         id: res.messageId,
+        chatId: activeChatId,
         userId: "",
         role: "assistant",
         content: res.answer,
@@ -110,6 +131,12 @@ export default function ChatPage() {
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
+
+      // Refresh sessions to get updated title if it was the first message
+      if (messages.length === 0) {
+        const sessionsRes = await api.getChatSessions();
+        setSessions(sessionsRes.sessions);
+      }
     } finally {
       setSending(false);
     }
@@ -117,10 +144,32 @@ export default function ChatPage() {
 
   async function handleNewChat() {
     try {
-      await api.clearChatHistory();
-      setMessages([]);
+      const newSession = await api.createChatSession();
+      setSessions((prev) => [newSession, ...prev]);
+      setActiveChatId(newSession.id);
+      setSidebarOpen(false);
     } catch (err) {
-      console.error("Failed to clear chat:", err);
+      console.error("Failed to create chat:", err);
+    }
+  }
+
+  async function handleDeleteChat(chatId: string) {
+    try {
+      await api.deleteChatSession(chatId);
+      setSessions((prev) => {
+        const filtered = prev.filter((s) => s.id !== chatId);
+        if (activeChatId === chatId) {
+          if (filtered.length > 0) {
+            setActiveChatId(filtered[0].id);
+          } else {
+            // If empty, fetch a new one
+            handleNewChat();
+          }
+        }
+        return filtered;
+      });
+    } catch (err) {
+      console.error("Failed to delete chat:", err);
     }
   }
 
@@ -215,87 +264,124 @@ export default function ChatPage() {
     }
   };
 
-  const connectedPlatforms = integrations
-    .filter((i) => i.status === "connected")
-    .map((i) => {
-      if (i.platform === "google_calendar") return "Google Calendar";
-      return i.platform.charAt(0).toUpperCase() + i.platform.slice(1);
-    });
-
-  const connectedText = connectedPlatforms.length > 0
-    ? connectedPlatforms.join(" & ")
-    : "none";
 
   return (
     <AppShell>
-      <div className="max-w-6xl mx-auto px-6 md:px-10 py-8 flex flex-col h-[calc(100vh-2rem)] md:h-screen">
-        <ChatHeader 
-          integrations={integrations} 
-          activePlatform={activePlatform}
-          onPlatformChange={handlePlatformChange}
-          onNewChat={handleNewChat} 
+      <div className="flex h-full md:h-screen overflow-hidden relative w-full">
+        <ChatSidebar
+          sessions={sessions}
+          activeChatId={activeChatId}
+          onSelectChat={(id) => { setActiveChatId(id); setSidebarOpen(false); }}
+          onNewChat={handleNewChat}
+          onDeleteChat={handleDeleteChat}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          integrations={integrations}
         />
+        <div className="flex-1 flex flex-col max-w-6xl mx-auto px-3 sm:px-6 md:px-10 pt-2 pb-1 sm:py-6 md:py-8 h-full w-full relative">
+          <ChatHeader
+            integrations={integrations}
+            activePlatform={activePlatform}
+            onPlatformChange={handlePlatformChange}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          />
 
-        <div className={`flex-1 overflow-y-auto px-4 py-4 mb-4 flex flex-col gap-6 scrollbar-thin rounded-3xl transition-colors duration-500 ${activePlatform === 'whatsapp' ? 'bg-[#efeae2] border border-[#d1cabc]' : activePlatform === 'gmail' ? 'bg-[#f6f8fc] border border-[#e8eaed]' : ''}`}>
-          {loadingHistory ? (
-            <div className="flex-1 flex items-center justify-center text-text-tertiary text-[13px] py-20">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading agent session…
-            </div>
-          ) : (
-            <>
-              <ChatSummaryCard 
-                todayLabel={todayLabel}
-                statusItems={statusItems}
-                takeaways={takeaways}
-                activePlatform={activePlatform}
-              />
-
-              {messages.filter(m => activePlatform === 'all' || m.platformContext === activePlatform || !m.platformContext).length > 0 && (
-                <div className="flex flex-col gap-4 pt-2">
-                  {messages.filter(m => activePlatform === 'all' || m.platformContext === activePlatform || !m.platformContext).map((m) => (
-                    <ChatMessageItem
-                      key={m.id}
-                      message={m}
-                      editingActionId={editingActionId}
-                      editPayload={editPayload}
-                      setEditingActionId={setEditingActionId}
-                      setEditPayload={setEditPayload}
-                      enhancingActions={enhancingActions}
-                      executingActions={executingActions}
-                      onEnhanceAction={handleEnhanceAction}
-                      onCancelAction={handleCancelAction}
-                      onExecuteAction={handleExecuteAction}
-                      onSendFollowUp={send}
-                    />
-                  ))}
-
-                  {sending && (
-                    <div className="flex items-start gap-3.5 justify-start">
-                      <div className="w-8 h-8 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 shadow-sm">
-                        <Bot className="w-4 h-4 text-accent animate-pulse" />
-                      </div>
-                      <div className="bg-surface border border-border rounded-2xl px-5 py-3.5 flex items-center gap-1.5 shadow-sm">
-                        <span className="w-2 h-2 bg-accent rounded-full animate-bounce [animation-delay:-0.3s]" />
-                        <span className="w-2 h-2 bg-accent rounded-full animate-bounce [animation-delay:-0.15s]" />
-                        <span className="w-2 h-2 bg-accent rounded-full animate-bounce" />
-                      </div>
-                    </div>
-                  )}
-                  <div ref={bottomRef} />
+          <div className={`flex-1 overflow-y-auto px-2 md:px-4 py-2 md:py-4 mb-1 md:mb-4 flex flex-col gap-6 scrollbar-hide rounded-3xl transition-colors duration-500 `}>
+            {loadingHistory ? (
+              <div className="flex-1 flex flex-col gap-8 pt-8 px-4 w-full max-w-4xl mx-auto">
+                {/* Skeleton Message Right */}
+                <div className="flex justify-end animate-pulse">
+                  <div className="w-full max-w-[280px] h-[52px] bg-surface-raised border border-border-soft rounded-[20px] rounded-tr-[4px]" />
                 </div>
-              )}
-            </>
-          )}
-        </div>
 
-        <ChatSuggestions suggestions={suggestions} onSelect={send} />
-        
-        <ChatInputForm 
-          input={input}
-          setInput={setInput}
-          sending={sending}
-          onSend={send}
-        />
+                {/* Skeleton Message Left (Assistant) */}
+                <div className="flex items-start gap-4 animate-pulse [animation-delay:150ms]">
+                  <div className="w-8 h-8 rounded-xl bg-accent/10 border border-accent/20 shrink-0 flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-accent/50" />
+                  </div>
+                  <div className="flex flex-col gap-3 w-full max-w-[400px]">
+                    <div className="w-full h-[88px] bg-surface-raised border border-border-soft rounded-[20px] rounded-tl-[4px]" />
+                    <div className="w-2/3 h-[60px] bg-surface-raised border border-border-soft rounded-[20px]" />
+                  </div>
+                </div>
+
+                {/* Skeleton Message Right */}
+                <div className="flex justify-end animate-pulse [animation-delay:300ms]">
+                  <div className="w-full max-w-[220px] h-[52px] bg-surface-raised border border-border-soft rounded-[20px] rounded-tr-[4px]" />
+                </div>
+
+                {/* Centered Spinner Status */}
+                <div className="flex items-center justify-center pt-10 pb-4">
+                  <div className="flex items-center gap-3 bg-surface border border-border px-5 py-2.5 rounded-full shadow-sm">
+                    <div className="relative flex items-center justify-center w-4 h-4">
+                      <div className="absolute inset-0 border-2 border-accent/20 rounded-full" />
+                      <div className="absolute inset-0 border-2 border-accent rounded-full border-t-transparent animate-spin" />
+                    </div>
+                    <span className="text-[13px] font-bold text-text-secondary tracking-wide uppercase">Syncing Intel</span>
+                    <span className="flex gap-0.5 ml-1">
+                      <span className="w-1 h-1 bg-accent rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1 h-1 bg-accent rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1 h-1 bg-accent rounded-full animate-bounce" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <ChatSummaryCard
+                  todayLabel={todayLabel}
+                  statusItems={statusItems}
+                  takeaways={takeaways}
+                  activePlatform={activePlatform}
+                />
+
+                {messages.filter(m => activePlatform === 'all' || m.platformContext === activePlatform || !m.platformContext).length > 0 && (
+                  <div className="flex flex-col gap-4 pt-2">
+                    {messages.filter(m => activePlatform === 'all' || m.platformContext === activePlatform || !m.platformContext).map((m, index) => (
+                      <ChatMessageItem
+                        key={`${m.id}-${index}`}
+                        message={m}
+                        editingActionId={editingActionId}
+                        editPayload={editPayload}
+                        setEditingActionId={setEditingActionId}
+                        setEditPayload={setEditPayload}
+                        enhancingActions={enhancingActions}
+                        executingActions={executingActions}
+                        onEnhanceAction={handleEnhanceAction}
+                        onCancelAction={handleCancelAction}
+                        onExecuteAction={handleExecuteAction}
+                        onSendFollowUp={send}
+                      />
+                    ))}
+
+                    {sending && (
+                      <div className="flex items-start gap-3.5 justify-start">
+                        <div className="w-8 h-8 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 shadow-sm">
+                          <Bot className="w-4 h-4 text-accent animate-pulse" />
+                        </div>
+                        <div className="bg-surface border border-border rounded-2xl px-5 py-3.5 flex items-center gap-1.5 shadow-sm">
+                          <span className="w-2 h-2 bg-accent rounded-full animate-bounce [animation-delay:-0.3s]" />
+                          <span className="w-2 h-2 bg-accent rounded-full animate-bounce [animation-delay:-0.15s]" />
+                          <span className="w-2 h-2 bg-accent rounded-full animate-bounce" />
+                        </div>
+                      </div>
+                    )}
+                    <div ref={bottomRef} />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <ChatSuggestions suggestions={suggestions} onSelect={send} />
+
+          <ChatInputForm
+            input={input}
+            setInput={setInput}
+            sending={sending}
+            onSend={send}
+          />
+        </div>
       </div>
     </AppShell>
   );

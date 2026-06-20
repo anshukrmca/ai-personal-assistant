@@ -13,10 +13,12 @@ export async function syncGoogleCalendarData(userId: string, accessToken: string
   const syncedItems: FeedItem[] = [];
 
   try {
-    // Fetch meetings from today onwards
-    const timeMin = new Date().toISOString();
+    // Fetch meetings from the start of the current month to capture recent past events
+    const timeMinDate = new Date();
+    timeMinDate.setMonth(timeMinDate.getMonth() - 1); // 1 month ago
+    const timeMin = timeMinDate.toISOString();
     const calendarRes = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&maxResults=5&orderBy=startTime&singleEvents=true`,
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&maxResults=10&orderBy=startTime&singleEvents=true`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }

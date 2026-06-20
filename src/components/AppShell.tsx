@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutGrid,
   Plug,
@@ -63,7 +64,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-[100dvh] w-full bg-bg text-text-primary overflow-hidden">
-      <aside className={`hidden md:flex flex-col border-r border-border/60 bg-surface py-6 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 relative z-50 h-full ${isCollapsed ? 'w-[88px] px-3' : 'w-64 px-5'}`}>
+      <motion.aside 
+        initial={false}
+        animate={{ 
+          width: isCollapsed ? 88 : 256,
+          paddingLeft: isCollapsed ? 12 : 20,
+          paddingRight: isCollapsed ? 12 : 20
+        }}
+        transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
+        className="hidden md:flex flex-col border-r border-border/60 bg-surface py-6 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] relative z-50 h-full"
+      >
         
         {/* Toggle Button */}
         <button 
@@ -181,36 +191,114 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
-      {/* Mobile top nav -> Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-t border-border pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
-        <div className="flex items-center justify-around px-2 py-2">
-          {NAV_ITEMS.map((item) => {
-            const active = pathname?.startsWith(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative flex flex-col items-center gap-1.5 px-3 py-2 rounded-2xl transition-all ${
-                  active ? "text-accent" : "text-text-tertiary hover:text-text-primary"
-                }`}
-              >
-                {active && (
-                  <span className="absolute -top-[1px] w-8 h-1 bg-gradient-to-r from-accent to-[#9061f9] rounded-b-full shadow-[0_2px_8px_rgba(124,58,237,0.5)]"></span>
-                )}
-                <Icon className={`w-[22px] h-[22px] transition-transform ${active ? 'scale-110 -translate-y-0.5' : ''}`} strokeWidth={active ? 2.5 : 2} />
-                <span className={`text-[10px] font-bold transition-all ${active ? 'opacity-100' : 'opacity-80'}`}>
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
+      <div className="flex flex-col flex-1 min-w-0 h-full relative">
+        {/* Mobile Top Bar */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-surface/85 backdrop-blur-xl border-b border-border/60 z-40 sticky top-0 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-accent to-[#9061f9] flex items-center justify-center text-white shadow-sm">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <span className="font-display font-bold text-[16px] tracking-tight">
+              Anshu<span className="text-accent">.ai</span>
+            </span>
+          </div>
+          
+          {/* User profile toggle for mobile */}
+          <div className="relative shrink-0">
+            <button 
+              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              className={`flex items-center justify-center w-8 h-8 rounded-full bg-surface-raised border border-border/60 shadow-sm relative overflow-hidden transition-all duration-200 cursor-pointer shrink-0 ${isProfileMenuOpen ? 'ring-2 ring-accent' : ''}`}
+            >
+              <span className="relative z-10 text-[11px] font-bold text-text-primary">A</span>
+              <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent"></div>
+            </button>
+
+            {/* Profile Menu Dropdown for mobile */}
+            <AnimatePresence>
+              {isProfileMenuOpen && (
+                <>
+                  {/* Backdrop to dismiss profile dropdown */}
+                  <div 
+                    className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px] md:hidden" 
+                    onClick={() => setIsProfileMenuOpen(false)} 
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: -15, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -15, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="absolute top-full right-0 mt-3 w-52 bg-surface border border-border/80 rounded-2xl shadow-xl flex flex-col p-2 z-50 overflow-hidden origin-top-right"
+                  >
+                    <div className="px-3 py-2 mb-1 border-b border-border/50">
+                      <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Anshu</p>
+                      <p className="text-[11.5px] text-text-tertiary truncate font-medium">anshu@intelligent.agent</p>
+                    </div>
+                    
+                    <Link 
+                      href="/integrations" 
+                      onClick={() => setIsProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13px] font-bold"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Account Settings
+                    </Link>
+                    
+                    <button 
+                      onClick={() => {
+                        toggleTheme();
+                        setIsProfileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13px] font-bold cursor-pointer"
+                    >
+                      {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                      {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                    </button>
+                    
+                    <div className="h-px bg-border/50 my-1 mx-2"></div>
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-danger/10 text-text-secondary hover:text-danger transition-colors text-[13px] font-bold cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign out
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
 
-      <main className="flex-1 min-w-0 h-full overflow-y-auto pb-20 md:pb-0 relative z-10">{children}</main>
+        {/* Mobile Floating Bottom Nav */}
+        <div className="md:hidden fixed bottom-4 left-4 right-4 z-50 bg-surface/90 backdrop-blur-xl border border-border/80 rounded-[1.25rem] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)] shrink-0 pb-[env(safe-area-inset-bottom)]">
+          <div className="flex items-center justify-between px-2 py-1.5 relative">
+            {NAV_ITEMS.map((item) => {
+              const active = pathname?.startsWith(item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative flex flex-col items-center justify-center w-14 h-12 transition-all duration-200 rounded-xl ${
+                    active ? "text-accent" : "text-text-tertiary hover:text-text-secondary"
+                  }`}
+                >
+                  {active && (
+                    <div className="absolute inset-0 bg-accent/10 rounded-xl -z-10" />
+                  )}
+                  <Icon className={`shrink-0 transition-transform ${active ? 'scale-110 w-5 h-5 mb-0.5' : 'w-5 h-5'}`} strokeWidth={active ? 2.5 : 2} />
+                  {active && <span className="text-[9px] font-bold tracking-wide">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <main className="flex-1 min-w-0 h-full overflow-y-auto pb-20 md:pb-0 relative z-10">{children}</main>
+      </div>
     </div>
   );
 }

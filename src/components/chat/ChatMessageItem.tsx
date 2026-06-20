@@ -83,7 +83,7 @@ export function ChatMessageItem({
           </div>
         )}
         <div
-          className={`max-w-[75%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-sm ${
+          className={`max-w-[90%] sm:max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 text-[10.5px] md:text-[14px] leading-relaxed shadow-sm ${
             m.role === "user"
               ? "user-bubble bg-gradient-to-tr from-[#7c3aed] to-[#9061f9] text-white font-semibold rounded-tr-none"
               : "bg-surface border border-border text-text-primary rounded-tl-none"
@@ -106,7 +106,7 @@ export function ChatMessageItem({
         const actionPayload = act.payload as any;
 
         return (
-          <div key={actionId || index} className="mt-2 flex flex-col">
+          <div key={`${actionId || 'action'}-${index}`} className="mt-2 flex flex-col">
             {/* Rich View Block (full-width, no wrapper card) */}
             {isRichView && (
               <div className="ml-[46px] max-w-[85%] rise-in">
@@ -154,11 +154,11 @@ export function ChatMessageItem({
                           <button 
                             disabled={enhancingActions[actionId]}
                             onClick={() => onEnhanceAction(m.id, actionId)} 
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-accent bg-accent/10 hover:bg-accent/20 font-bold text-[12px] transition-all disabled:opacity-50"
+                            className="flex  cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-accent bg-accent/10 hover:bg-accent/20 font-bold text-[12px] transition-all disabled:opacity-50"
                           >
                             {enhancingActions[actionId] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✨ Polish with AI"}
                           </button>
-                          <button onClick={() => { setEditingActionId(actionId); setEditPayload(actionPayload); }} className="px-3 py-1.5 rounded-lg text-text-secondary hover:bg-surface-raised font-bold text-[12px] transition-all">Edit</button>
+                          <button onClick={() => { setEditingActionId(actionId); setEditPayload(actionPayload); }} className="cursor-pointer px-3 py-1.5 rounded-lg text-text-secondary hover:bg-surface-raised font-bold text-[12px] transition-all">Edit</button>
                         </>
                       )}
                       <button 
@@ -171,7 +171,7 @@ export function ChatMessageItem({
                             onCancelAction(m.id, actionId);
                           }
                         }} 
-                        className="px-3 py-1.5 rounded-lg text-text-secondary hover:bg-surface-raised font-bold text-[12px] transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 cursor-pointer rounded-lg text-text-secondary hover:bg-surface-raised font-bold text-[12px] transition-all disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -197,12 +197,12 @@ export function ChatMessageItem({
             {!isRichView && !isRichEditable && (
               <div className="ml-[46px] max-w-[75%] bg-surface border border-border shadow-sm rounded-xl overflow-hidden rise-in">
                 <div className="bg-surface-raised px-4 py-2 border-b border-border-soft flex items-center justify-between">
-                  <span className="font-bold text-text-primary text-[13px]">
+                  <span className="font-bold text-text-primary text-[10.5px] md:text-[13px]">
                     {getActionLabel(act.type)}
                   </span>
-                  <span className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">{act.type.includes("_read") ? "Details" : "Preview"}</span>
+                  <span className="text-[10px] md:text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">{act.type.includes("_read") ? "Details" : "Preview"}</span>
                 </div>
-                <div className="p-4 flex flex-col gap-2 text-[13px]">
+                <div className="p-4 flex flex-col gap-2 text-[10.5px] md:text-[13px]">
                   {/* Action components mapped to act instead of m */}
                   {act.type === "calendar" && <CalendarAction m={{ ...m, action: act }} editingActionId={editingActionId} editPayload={editPayload} setEditPayload={setEditPayload} />}
                   {act.type === "calendar_update" && <CalendarUpdateAction m={{ ...m, action: act }} editingActionId={editingActionId} editPayload={editPayload} setEditPayload={setEditPayload} />}

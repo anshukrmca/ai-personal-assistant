@@ -14,8 +14,8 @@ export function CalendarCancelAction({ m }: CalendarCancelActionProps) {
       <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-2">
         <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
         <div className="flex flex-col">
-          <span className="text-red-800 text-[13px] font-semibold">Delete Event</span>
-          <span className="text-red-700 text-[12px]">This action will permanently delete this event from your Google Calendar.</span>
+          <span className="text-red-800 text-[10.5px] md:text-[13px] font-semibold">Delete Event</span>
+          <span className="text-red-700 text-[10px] md:text-[12px]">This action will permanently delete this event from your Google Calendar.</span>
         </div>
       </div>
       <div className="flex flex-col gap-1">

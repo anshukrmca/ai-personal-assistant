@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import { deleteWhere, findOne, insertOne } from "./jsonStore";
+import { getDb } from "./mongoClient";
 import type { Briefing } from "../types";
 
 const COLLECTION = "briefings";
@@ -8,22 +8,25 @@ function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function getTodaysBriefing(userId: string): Briefing | undefined {
-  return findOne<Briefing>(
-    COLLECTION,
-    (b) => b.userId === userId && b.date === todayKey()
-  );
+export async function getTodaysBriefing(userId: string): Promise<Briefing | null> {
+  const db = await getDb();
+  const briefing = await db.collection(COLLECTION).findOne({
+    userId,
+    date: todayKey(),
+  });
+  return briefing ? (briefing as unknown as Briefing) : null;
 }
 
-export function saveBriefing(
+export async function saveBriefing(
   userId: string,
   fields: Pick<
     Briefing,
     "summary" | "meetingsCount" | "importantAlertsCount" | "pendingFollowUpsCount"
   >
-): Briefing {
+): Promise<Briefing> {
   const date = todayKey();
-  deleteWhere<Briefing>(COLLECTION, (b) => b.userId === userId && b.date === date);
+  const db = await getDb();
+  
   const briefing: Briefing = {
     id: uuid(),
     userId,
@@ -31,5 +34,12 @@ export function saveBriefing(
     generatedAt: new Date().toISOString(),
     ...fields,
   };
-  return insertOne<Briefing>(COLLECTION, briefing);
+
+  await db.collection(COLLECTION).findOneAndReplace(
+    { userId, date },
+    { ...briefing },
+    { upsert: true }
+  );
+
+  return briefing;
 }

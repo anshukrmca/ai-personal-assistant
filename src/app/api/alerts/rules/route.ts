@@ -10,7 +10,7 @@ export async function GET() {
   }
 
   try {
-    const items = getFeedForUser(session.userId);
+    const items = await getFeedForUser(session.userId);
     const rules = await suggestAlertRules(items);
     return NextResponse.json({ rules });
   } catch (err) {

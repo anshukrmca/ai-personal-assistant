@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
     // Save tokens in JSON store
-    saveGoogleToken(session.userId, {
+    await saveGoogleToken(session.userId, {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token, // might only be sent on prompt=consent (consent is configured)
       expiresAt,
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     // Connect this platform
     const platform = state as IntegrationPlatform; // e.g. "gmail" or "google_calendar"
-    connectIntegration(session.userId, platform);
+    await connectIntegration(session.userId, platform);
 
     // Trigger an initial background sync of live data immediately so user sees their actual data
     try {

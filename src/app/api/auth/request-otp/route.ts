@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { phoneNumber, channel } = parsed.data;
-  createOtp(phoneNumber, channel);
+  await createOtp(phoneNumber, channel);
 
   // In production this is where Sent.dm's API would be called to actually
   // deliver the OTP over SMS/WhatsApp/RCS. Until SENTDM_API_KEY is wired
   // up, we simulate delivery and surface the code directly for local dev.
-  const devCode = process.env.SENTDM_API_KEY ? null : peekOtpForDev(phoneNumber);
+  const devCode = process.env.SENTDM_API_KEY ? null : await peekOtpForDev(phoneNumber);
 
   return NextResponse.json({
     ok: true,

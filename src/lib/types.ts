@@ -98,8 +98,17 @@ export interface ChatAction {
   status: "pending" | "completed" | "failed";
 }
 
+export interface ChatSession {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ChatMessage {
   id: string;
+  chatId: string;
   userId: string;
   role: "user" | "assistant";
   content: string;

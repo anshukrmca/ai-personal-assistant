@@ -1,4 +1,4 @@
-import { findOne, insertOne, updateWhere } from "./jsonStore";
+import { getDb } from "./mongoClient";
 
 export interface OAuthToken {
   userId: string;
@@ -10,34 +10,39 @@ export interface OAuthToken {
 
 const COLLECTION = "tokens";
 
-export function getGoogleToken(userId: string): OAuthToken | undefined {
-  return findOne<OAuthToken>(COLLECTION, (t) => t.userId === userId && t.platform === "google");
+export async function getGoogleToken(userId: string): Promise<OAuthToken | null> {
+  const db = await getDb();
+  const token = await db.collection(COLLECTION).findOne({ userId, platform: "google" });
+  return token ? (token as unknown as OAuthToken) : null;
 }
 
-export function saveGoogleToken(
+export async function saveGoogleToken(
   userId: string,
   tokens: { accessToken: string; refreshToken?: string; expiresAt: string }
-): OAuthToken {
-  const existing = getGoogleToken(userId);
-  if (!existing) {
-    return insertOne<OAuthToken>(COLLECTION, {
+): Promise<OAuthToken> {
+  const db = await getDb();
+  
+  const updateDoc: any = {
+    $set: {
+      accessToken: tokens.accessToken,
+      expiresAt: tokens.expiresAt,
+    },
+    $setOnInsert: {
       userId,
       platform: "google",
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresAt: tokens.expiresAt,
-    });
+    }
+  };
+
+  // Only update refresh token if a new one is provided
+  if (tokens.refreshToken) {
+    updateDoc.$set.refreshToken = tokens.refreshToken;
   }
 
-  const updated = updateWhere<OAuthToken>(
-    COLLECTION,
-    (t) => t.userId === userId && t.platform === "google",
-    (t) => ({
-      ...t,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken || t.refreshToken,
-      expiresAt: tokens.expiresAt,
-    })
+  const result = await db.collection(COLLECTION).findOneAndUpdate(
+    { userId, platform: "google" },
+    updateDoc,
+    { returnDocument: "after", upsert: true }
   );
-  return updated.find((t) => t.userId === userId && t.platform === "google")!;
+
+  return result as unknown as OAuthToken;
 }

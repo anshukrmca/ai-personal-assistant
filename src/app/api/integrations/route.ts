@@ -8,6 +8,6 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const integrations = getIntegrationsForUser(session.userId);
+  const integrations = await getIntegrationsForUser(session.userId);
   return NextResponse.json({ integrations });
 }

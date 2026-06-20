@@ -16,12 +16,12 @@ export async function GET() {
     console.error("Failed to sync Google data in background during dashboard fetch:", err);
   });
 
-  const items = getFeedForUser(session.userId);
-  let briefing = getTodaysBriefing(session.userId);
+  const items = await getFeedForUser(session.userId);
+  let briefing = await getTodaysBriefing(session.userId);
 
   if (!briefing) {
     const result = await generateBriefing(items);
-    briefing = saveBriefing(session.userId, result);
+    briefing = await saveBriefing(session.userId, result);
   }
 
   return NextResponse.json({ briefing, items });

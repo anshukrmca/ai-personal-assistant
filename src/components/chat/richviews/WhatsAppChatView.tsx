@@ -23,12 +23,12 @@ export function WhatsAppChatView({ payload, richData }: WhatsAppChatViewProps) {
     <div className="w-full rounded-2xl overflow-hidden border border-border shadow-sm mt-2">
       {/* WhatsApp header */}
       <div className="flex items-center gap-3 px-4 py-2.5 bg-[#008069] text-white">
-        <div className="w-8 h-8 rounded-full bg-[#00a884] flex items-center justify-center text-[14px] font-bold shrink-0">
+        <div className="w-8 h-8 rounded-full bg-[#00a884] flex items-center justify-center text-[10.5px] md:text-[14px] font-bold shrink-0">
           {chatName.charAt(0).toUpperCase()}
         </div>
         <div>
-          <div className="text-[14px] font-medium">{chatName}</div>
-          <div className="text-[11px] text-white/70">online</div>
+          <div className="text-[10.5px] md:text-[14px] font-medium">{chatName}</div>
+          <div className="text-[10px] md:text-[11px] text-white/70">online</div>
         </div>
       </div>
 
@@ -38,16 +38,16 @@ export function WhatsAppChatView({ payload, richData }: WhatsAppChatViewProps) {
       >
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.isMe ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[80%] rounded-lg px-3 py-1.5 shadow-sm text-[13px] leading-relaxed ${
+            <div className={`max-w-[85%] md:max-w-[80%] rounded-lg px-3 py-1.5 shadow-sm text-[10.5px] md:text-[13px] leading-relaxed ${
               msg.isMe 
                 ? "bg-[#d9fdd3] text-[#111b21] dark:bg-[#005c4b] dark:text-[#e9edef] rounded-tr-none" 
                 : "bg-white text-[#111b21] dark:bg-[#202c33] dark:text-[#e9edef] rounded-tl-none"
             }`}>
               {!msg.isMe && (
-                <div className="text-[11px] font-bold text-[#00a884] mb-0.5">{msg.from}</div>
+                <div className="text-[10px] md:text-[11px] font-bold text-[#00a884] mb-0.5">{msg.from}</div>
               )}
               <div>{msg.body}</div>
-              <div className="text-[10px] text-[#667781] dark:text-[#8696a0] text-right mt-0.5">
+              <div className="text-[9px] md:text-[10px] text-[#667781] dark:text-[#8696a0] text-right mt-0.5">
                 {msg.time}
                 {msg.isMe && <span className="ml-1 text-[#53bdeb]">✓✓</span>}
               </div>
@@ -56,7 +56,7 @@ export function WhatsAppChatView({ payload, richData }: WhatsAppChatViewProps) {
         ))}
 
         {messages.length === 0 && (
-          <div className="py-8 text-center text-[#667781] dark:text-text-tertiary text-[13px]">
+          <div className="py-8 text-center text-[#667781] dark:text-text-tertiary text-[10.5px] md:text-[13px]">
             No messages to display.
           </div>
         )}

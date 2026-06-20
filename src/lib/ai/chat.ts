@@ -40,6 +40,24 @@ ${text}`;
   }
 }
 
+export async function generateChatTitle(question: string): Promise<string> {
+  if (PROVIDER === "mock") {
+    return question.length > 25 ? question.substring(0, 25) + "..." : question;
+  }
+
+  try {
+    const title = await callAI(
+      "You are a helpful assistant. Generate a concise 3 to 5 word summary title for the user's message. Output ONLY the title text, nothing else, no quotes.",
+      question,
+      50
+    );
+    return title.trim().replace(/^"|"$/g, '');
+  } catch (err) {
+    console.warn("[aiService] generateChatTitle failed, using fallback:", err);
+    return question.length > 25 ? question.substring(0, 25) + "..." : question;
+  }
+}
+
 export async function answerChatQuestion(
   question: string,
   items: FeedItem[],
@@ -208,13 +226,20 @@ export async function answerChatQuestion(
     `}\n` +
     `</slack_channel_view>\n\n` +
     `Rules:\n` +
-    `- You may output MULTIPLE XML action blocks in a single response if the user explicitly asks you to do multiple things at once (e.g., "update the meeting AND send an email").\n` +
-    `- PREFER rich view actions (9-14) over basic read actions (7-8) when displaying data. Rich views look much better.\n` +
-    `- CRITICAL: If the user says "draft", "compose", or "prepare", you MUST use <email_compose_view>, NOT <email_action>. Only use <email_action> if the user explicitly says "send" or "mail now".\n` +
-    `- You MUST dynamically populate all fields in the JSON block using details from the user's query and their connected data context. Never output recipient@email.com or dummy subjects/bodies unless no details could be inferred.\n` +
-    `- If the user specifies a recipient by name (e.g. "email Rohan"), search the connected data (Gmail and Calendar items) for a sender or attendee matching that name to find their real email address. If not found, use their-name@example.com.\n` +
-    `- Make sure the JSON is valid.\n` +
-    `- Inform the user in your message about the action you are taking.`;
+    `- MULTIPLE ACTIONS: You may output multiple XML action blocks in a single response if the user explicitly asks for multiple things (e.g., "update the meeting AND send an email").\n` +
+    `- RICH VIEWS PREFERRED: Prefer rich view actions (9-14) over basic read actions (7-8) when displaying data.\n` +
+    `- DRAFT VS SEND: If the user says "draft", "compose", or "prepare", you MUST use <email_compose_view>, NOT <email_action>. Only use <email_action> if the user explicitly says "send" or "mail now".\n` +
+    `- SCHEDULE VS AGENDA: If the user asks to schedule, create, set a reminder, or add a meeting/event, you MUST use <calendar_action>. IF the user asks to "check", "show", or "view" their calendar/schedule, you MUST use <calendar_agenda_view>.\n` +
+    `- NO UNPROMPTED ACTIONS: Do NOT generate action blocks (like <email_action>) unless the user explicitly requested that specific action in their CURRENT message. Do not carry over actions from previous messages.\n` +
+    `- CANCEL/DELETE: If the user asks to delete, remove, or cancel a meeting, use <calendar_cancel_action>.\n` +
+    `- STRICT XML TAGS: YOU MUST EXACTLY MATCH THE XML TAGS PROVIDED (e.g. <calendar_action>, <email_action>). DO NOT INVENT CUSTOM TAGS (like <email_to_member>, <schedule_event>, etc.).\n` +
+    `- STRICT JSON ARRAYS: Fields typed as arrays (like "attendees") MUST be valid JSON arrays (e.g., ["email@domain.com"]). DO NOT output a raw string.\n` +
+    `- STRICT ISO DATES: Always output "startTime" as a valid ISO 8601 string (e.g., "2026-06-21T11:00:00Z").\n` +
+    `- DYNAMIC POPULATION: You MUST dynamically populate all fields in the JSON block using details from the user's query and their connected data context. Never output recipient@email.com or dummy subjects/bodies unless absolutely no details could be inferred.\n` +
+    `- RECIPIENT RESOLUTION: If the user specifies a recipient by name (e.g. "email Rohan"), search the connected data (Gmail and Calendar items) for a sender or attendee matching that name to find their real email address. If not found, use their-name@example.com.\n` +
+    `- EVENT IDs: When updating or cancelling, ALWAYS try to find the actual event ID (e.g., gcal-...) from the provided connected data context. Only use the title as a last resort.\n` +
+    `- STRICTLY RAW JSON: The content inside your XML tags (e.g. <email_action>) MUST BE PURE, VALID JSON ONLY. Do NOT put any markdown text, explanations, or **bold** text inside the XML tags. Only output the JSON object { ... } inside the tags.\n` +
+    `- Inform the user in your text message about the action you are taking.`;
 
   try {
     return await callAI(

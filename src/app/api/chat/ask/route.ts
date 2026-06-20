@@ -4,16 +4,16 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { getFeedForUser } from "@/lib/db/feed";
 import { answerChatQuestion } from "@/lib/aiService";
-import { insertOne, findMany, deleteWhere } from "@/lib/db/jsonStore";
+import { getMessageHistory, insertMessage, clearHistory } from "@/lib/db/messages";
 import type { ChatAction, ChatMessage } from "@/lib/types";
 
 const schema = z.object({
   question: z.string().min(1),
   activePlatform: z.string().optional(),
+  chatId: z.string().min(1),
   timeZone: z.string().optional(),
   localTime: z.string().optional(),
 });
-const COLLECTION = "chatMessages";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -27,21 +27,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Question is required" }, { status: 400 });
   }
 
-  const history = findMany<ChatMessage>(COLLECTION, (m) => m.userId === session.userId).sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  const history = await getMessageHistory(session.userId, parsed.data.chatId);
 
   const userMessage: ChatMessage = {
     id: uuid(),
+    chatId: parsed.data.chatId,
     userId: session.userId,
     role: "user",
     content: parsed.data.question,
     createdAt: new Date().toISOString(),
     platformContext: parsed.data.activePlatform || "all",
   };
-  insertOne<ChatMessage>(COLLECTION, userMessage);
+  await insertMessage(userMessage);
 
-  let items = getFeedForUser(session.userId);
+  let items = await getFeedForUser(session.userId);
   if (parsed.data.activePlatform && parsed.data.activePlatform !== "all") {
     items = items.filter(i => i.source === parsed.data.activePlatform);
   }
@@ -125,6 +124,7 @@ export async function POST(req: NextRequest) {
         finalAnswer = finalAnswer.replace(match[0], "").trim();
       } catch (err) {
         console.error(`Failed to parse ${tag} JSON:`, err);
+        finalAnswer = finalAnswer.replace(match[0], `[⚠️ The AI generated a ${tag} block, but its internal JSON was invalid. Please try asking again.]`).trim();
       }
     }
   }
@@ -154,6 +154,7 @@ export async function POST(req: NextRequest) {
 
   const assistantMessage: ChatMessage = {
     id: uuid(),
+    chatId: parsed.data.chatId,
     userId: session.userId,
     role: "assistant",
     content: finalAnswer,
@@ -161,27 +162,30 @@ export async function POST(req: NextRequest) {
     actions: actionsData,
     platformContext: parsed.data.activePlatform || "all",
   };
-  insertOne<ChatMessage>(COLLECTION, assistantMessage);
+  await insertMessage(assistantMessage);
+
+  // If it's the first message, update the session title
+  if (history.length === 0) {
+    const { updateSessionTitle } = await import("@/lib/db/messages");
+    const { generateChatTitle } = await import("@/lib/aiService");
+    const title = await generateChatTitle(parsed.data.question);
+    await updateSessionTitle(parsed.data.chatId, title);
+  }
 
   return NextResponse.json({ answer: finalAnswer, messageId: assistantMessage.id, actions: actionsData });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const history = findMany<ChatMessage>(COLLECTION, (m) => m.userId === session.userId).sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-  return NextResponse.json({ history });
-}
+  const { searchParams } = new URL(req.url);
+  const chatId = searchParams.get("chatId");
+  if (!chatId) {
+    return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
+  }
 
-export async function DELETE() {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-  deleteWhere<ChatMessage>(COLLECTION, (m) => m.userId === session.userId);
-  return NextResponse.json({ ok: true });
+  const history = await getMessageHistory(session.userId, chatId);
+  return NextResponse.json({ history });
 }

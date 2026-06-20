@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import { findMany, readCollection, writeCollection } from "./jsonStore";
+import { getDb } from "./mongoClient";
 import type { FeedItem, IntegrationPlatform, ItemSource, Priority } from "../types";
 
 const COLLECTION = "feedItems";
@@ -15,9 +15,6 @@ interface SeedTemplate {
   minutesAgo: number;
 }
 
-// Realistic-looking mock data standing in for synced platform content
-// (see Section 5: Example MCP Actions — this simulates what gmail_search_inbox,
-// calendar list, slack history, etc. would return).
 const SEED_TEMPLATES: SeedTemplate[] = [
   {
     source: "gmail",
@@ -121,9 +118,9 @@ const SEED_TEMPLATES: SeedTemplate[] = [
   },
 ];
 
-export function seedFeedForUser(userId: string, connectedSources: ItemSource[]): void {
-  const all = readCollection<FeedItem>(COLLECTION);
-  const withoutUser = all.filter((item) => item.userId !== userId);
+export async function seedFeedForUser(userId: string, connectedSources: ItemSource[]): Promise<void> {
+  const db = await getDb();
+  await db.collection(COLLECTION).deleteMany({ userId });
 
   const now = Date.now();
   const items: FeedItem[] = SEED_TEMPLATES.filter((t) =>
@@ -142,29 +139,48 @@ export function seedFeedForUser(userId: string, connectedSources: ItemSource[]):
     requiresFollowUp: t.requiresFollowUp,
   }));
 
-  writeCollection(COLLECTION, [...withoutUser, ...items]);
+  if (items.length > 0) {
+    await db.collection(COLLECTION).insertMany(items as any[]);
+  }
 }
 
-export function getFeedForUser(userId: string): FeedItem[] {
-  return findMany<FeedItem>(COLLECTION, (i) => i.userId === userId).sort(
-    (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+export async function insertFeedItems(items: FeedItem[]): Promise<void> {
+  if (items.length === 0) return;
+  const db = await getDb();
+  await db.collection(COLLECTION).insertMany(items as any[]);
+}
+
+export async function deleteFeedItemsBySource(userId: string, sources: string[]): Promise<void> {
+  if (sources.length === 0) return;
+  const db = await getDb();
+  await db.collection(COLLECTION).deleteMany({ 
+    userId, 
+    source: { $in: sources } 
+  });
+}
+
+export async function getFeedForUser(userId: string): Promise<FeedItem[]> {
+  const db = await getDb();
+  const cursor = await db.collection(COLLECTION)
+    .find({ userId })
+    .sort({ receivedAt: -1 }); // relies on ISO strings sorting naturally, or convert to dates
+  return (await cursor.toArray()) as unknown as FeedItem[];
+}
+
+export async function markRead(userId: string, itemId: string): Promise<void> {
+  const db = await getDb();
+  await db.collection(COLLECTION).updateOne(
+    { userId, id: itemId },
+    { $set: { isRead: true } }
   );
 }
 
-export function markRead(userId: string, itemId: string): void {
-  const items = readCollection<FeedItem>(COLLECTION);
-  const updated = items.map((i) =>
-    i.userId === userId && i.id === itemId ? { ...i, isRead: true } : i
+export async function updateItemPriority(userId: string, itemId: string, priority: Priority): Promise<void> {
+  const db = await getDb();
+  await db.collection(COLLECTION).updateOne(
+    { userId, id: itemId },
+    { $set: { priority } }
   );
-  writeCollection(COLLECTION, updated);
-}
-
-export function updateItemPriority(userId: string, itemId: string, priority: Priority): void {
-  const items = readCollection<FeedItem>(COLLECTION);
-  const updated = items.map((i) =>
-    i.userId === userId && i.id === itemId ? { ...i, priority } : i
-  );
-  writeCollection(COLLECTION, updated);
 }
 
 export function platformToSource(platform: IntegrationPlatform): ItemSource {

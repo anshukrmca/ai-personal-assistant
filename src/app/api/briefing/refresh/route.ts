@@ -18,9 +18,9 @@ export async function POST() {
     console.error("Failed to sync Google data during manual briefing refresh:", err);
   }
 
-  const items = getFeedForUser(session.userId);
+  const items = await getFeedForUser(session.userId);
   const result = await generateBriefing(items);
-  const briefing = saveBriefing(session.userId, result);
+  const briefing = await saveBriefing(session.userId, result);
 
   return NextResponse.json({ briefing, items });
 }

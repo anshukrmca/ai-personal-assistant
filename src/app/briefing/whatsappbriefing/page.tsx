@@ -22,15 +22,15 @@ export default function WhatsAppBriefingPage() {
 
   return (
     <AppShell>
-      <div className="px-6 py-8">
+      <div className="px-4 md:px-6 py-8">
         <button 
           onClick={() => router.push('/briefing')}
-          className="flex items-center gap-2 px-4 py-2 text-text-secondary hover:bg-surface-raised rounded-full transition-colors font-medium text-[13px] mb-6 cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 text-text-secondary hover:bg-surface-raised rounded-full transition-colors font-medium text-[10.5px] md:text-[13px] mb-6 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Briefing Hub
         </button>
-        <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm min-h-[400px]">
-          <h2 className="text-2xl font-bold mb-6 text-[#25D366] flex items-center gap-2">
+        <div className="bg-surface border border-border rounded-3xl p-4 sm:p-6 shadow-sm min-h-[400px]">
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 text-[#25D366] flex items-center gap-2">
              WhatsApp Briefing
           </h2>
           {loading ? (

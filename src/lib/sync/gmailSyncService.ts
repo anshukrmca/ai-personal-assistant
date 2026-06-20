@@ -13,6 +13,7 @@ export async function syncGmailData(userId: string, accessToken: string): Promis
 
   const syncedItems: FeedItem[] = [];
   const syncedIds = new Set<string>();
+  const syncedThreadIds = new Set<string>();
 
   const foldersToSync = [
     { query: "category:primary", folderName: "inbox" },
@@ -35,10 +36,13 @@ export async function syncGmailData(userId: string, accessToken: string): Promis
         const messages = listData.messages || [];
 
         for (const msg of messages) {
-          if (syncedIds.has(msg.id)) {
+          if (syncedIds.has(msg.id) || (msg.threadId && syncedThreadIds.has(msg.threadId))) {
             continue;
           }
           syncedIds.add(msg.id);
+          if (msg.threadId) {
+            syncedThreadIds.add(msg.threadId);
+          }
 
           const detailRes = await fetch(
             `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
@@ -85,14 +89,16 @@ export async function syncGmailData(userId: string, accessToken: string): Promis
               requiresFollowUp = true;
             }
 
-            // Dynamically evaluate folder from labels
-            let folder = folderName;
+            // Dynamically evaluate folder strictly from Google's labelIds
+            let folder = "archive";
+            if (labelIds.includes("INBOX")) {
+              folder = "inbox";
+            }
+            if (labelIds.includes("SENT")) {
+              folder = "sent";
+            }
             if (labelIds.includes("DRAFT")) {
               folder = "drafts";
-            } else if (labelIds.includes("SENT")) {
-              folder = "sent";
-            } else if (labelIds.includes("INBOX")) {
-              folder = "inbox";
             }
 
             syncedItems.push({

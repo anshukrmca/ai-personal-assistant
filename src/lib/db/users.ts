@@ -1,18 +1,22 @@
 import { v4 as uuid } from "uuid";
-import { findOne, insertOne, updateWhere } from "./jsonStore";
+import { getDb } from "./mongoClient";
 import type { AuthProvider, User } from "../types";
 
 const COLLECTION = "users";
 
-export function getUserByPhone(phoneNumber: string): User | undefined {
-  return findOne<User>(COLLECTION, (u) => u.phoneNumber === phoneNumber);
+export async function getUserByPhone(phoneNumber: string): Promise<User | null> {
+  const db = await getDb();
+  const user = await db.collection(COLLECTION).findOne({ phoneNumber });
+  return user ? (user as unknown as User) : null;
 }
 
-export function getUserById(userId: string): User | undefined {
-  return findOne<User>(COLLECTION, (u) => u.userId === userId);
+export async function getUserById(userId: string): Promise<User | null> {
+  const db = await getDb();
+  const user = await db.collection(COLLECTION).findOne({ userId });
+  return user ? (user as unknown as User) : null;
 }
 
-export function createUser(phoneNumber: string, authProvider: AuthProvider): User {
+export async function createUser(phoneNumber: string, authProvider: AuthProvider): Promise<User> {
   const now = new Date().toISOString();
   const user: User = {
     userId: uuid(),
@@ -24,24 +28,28 @@ export function createUser(phoneNumber: string, authProvider: AuthProvider): Use
     createdAt: now,
     lastLogin: now,
   };
-  return insertOne<User>(COLLECTION, user);
+  const db = await getDb();
+  await db.collection(COLLECTION).insertOne({ ...user });
+  return user;
 }
 
-export function touchLastLogin(userId: string): void {
-  updateWhere<User>(
-    COLLECTION,
-    (u) => u.userId === userId,
-    (u) => ({ ...u, lastLogin: new Date().toISOString() })
+export async function touchLastLogin(userId: string): Promise<void> {
+  const db = await getDb();
+  await db.collection(COLLECTION).updateOne(
+    { userId },
+    { $set: { lastLogin: new Date().toISOString() } }
   );
 }
 
-export function updateUserProfile(
+export async function updateUserProfile(
   userId: string,
   fields: Partial<Pick<User, "name" | "email" | "avatar">>
-): User[] {
-  return updateWhere<User>(
-    COLLECTION,
-    (u) => u.userId === userId,
-    (u) => ({ ...u, ...fields })
+): Promise<User | null> {
+  const db = await getDb();
+  const result = await db.collection(COLLECTION).findOneAndUpdate(
+    { userId },
+    { $set: fields },
+    { returnDocument: "after" }
   );
+  return result ? (result as unknown as User) : null;
 }

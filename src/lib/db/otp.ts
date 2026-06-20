@@ -1,4 +1,4 @@
-import { deleteWhere, findOne, insertOne } from "./jsonStore";
+import { getDb } from "./mongoClient";
 import type { AuthProvider, OtpRecord } from "../types";
 
 const COLLECTION = "otps";
@@ -10,51 +10,66 @@ function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export function createOtp(phoneNumber: string, channel: AuthProvider): OtpRecord {
+export async function createOtp(phoneNumber: string, channel: AuthProvider): Promise<OtpRecord> {
+  const db = await getDb();
   // Invalidate any existing OTP for this number first
-  deleteWhere<OtpRecord>(COLLECTION, (o) => o.phoneNumber === phoneNumber);
+  await db.collection(COLLECTION).deleteMany({ phoneNumber });
 
-  const record: OtpRecord = {
+  // Use a proper JS Date so MongoDB TTL index can work with expiresAt
+  const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+  
+  const record = {
     phoneNumber,
     code: generateCode(),
     channel,
-    expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString(),
+    expiresAt,
     attempts: 0,
   };
-  return insertOne<OtpRecord>(COLLECTION, record);
+  await db.collection(COLLECTION).insertOne({ ...record });
+  
+  // Return the record mapped back to string dates for the rest of the app
+  return {
+    ...record,
+    expiresAt: expiresAt.toISOString(),
+  } as OtpRecord;
 }
 
 export type OtpVerifyResult =
   | { ok: true }
   | { ok: false; reason: "not_found" | "expired" | "incorrect" | "locked" };
 
-export function verifyOtp(phoneNumber: string, code: string): OtpVerifyResult {
-  const record = findOne<OtpRecord>(COLLECTION, (o) => o.phoneNumber === phoneNumber);
+export async function verifyOtp(phoneNumber: string, code: string): Promise<OtpVerifyResult> {
+  const db = await getDb();
+  const record = await db.collection(COLLECTION).findOne({ phoneNumber });
+  
   if (!record) return { ok: false, reason: "not_found" };
 
   if (record.attempts >= MAX_ATTEMPTS) {
     return { ok: false, reason: "locked" };
   }
 
+  // MongoDB TTL should handle expiry, but we do a sanity check here too
   if (new Date(record.expiresAt).getTime() < Date.now()) {
-    deleteWhere<OtpRecord>(COLLECTION, (o) => o.phoneNumber === phoneNumber);
+    await db.collection(COLLECTION).deleteMany({ phoneNumber });
     return { ok: false, reason: "expired" };
   }
 
   if (record.code !== code) {
-    const updated = { ...record, attempts: record.attempts + 1 };
-    deleteWhere<OtpRecord>(COLLECTION, (o) => o.phoneNumber === phoneNumber);
-    insertOne<OtpRecord>(COLLECTION, updated);
+    await db.collection(COLLECTION).updateOne(
+      { phoneNumber },
+      { $inc: { attempts: 1 } }
+    );
     return { ok: false, reason: "incorrect" };
   }
 
-  deleteWhere<OtpRecord>(COLLECTION, (o) => o.phoneNumber === phoneNumber);
+  await db.collection(COLLECTION).deleteMany({ phoneNumber });
   return { ok: true };
 }
 
 // Dev helper: lets the UI display the "sent" code since there's no real
 // SMS/WhatsApp provider wired up yet (see Section 21: mock vs real APIs).
-export function peekOtpForDev(phoneNumber: string): string | null {
-  const record = findOne<OtpRecord>(COLLECTION, (o) => o.phoneNumber === phoneNumber);
+export async function peekOtpForDev(phoneNumber: string): Promise<string | null> {
+  const db = await getDb();
+  const record = await db.collection(COLLECTION).findOne({ phoneNumber });
   return record?.code ?? null;
 }

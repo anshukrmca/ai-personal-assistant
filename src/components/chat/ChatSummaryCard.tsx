@@ -40,23 +40,23 @@ export function ChatSummaryCard({ todayLabel, statusItems, takeaways, activePlat
   const Icon = config.icon;
 
   return (
-    <div className="bg-surface border border-border shadow-sm rounded-3xl p-6 flex flex-col gap-5 rise-in">
+    <div className="bg-surface border border-border shadow-sm rounded-3xl p-4 md:p-6 flex flex-col gap-4 md:gap-5 rise-in">
       <div className="pb-3 border-b border-border-soft">
-        <h3 className="font-display font-bold text-[14.5px] text-text-primary tracking-tight flex items-center gap-2">
+        <h3 className="font-display font-bold text-[10.5px] md:text-[14.5px] text-text-primary tracking-tight flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <span>Summary of</span>
-          <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded-lg text-[11px] font-bold ${config.colorClass}`}>
+          <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded-lg text-[10px] md:text-[11px] font-bold ${config.colorClass}`}>
             <Icon className="w-3 h-3" /> {config.label}
           </span>
           <span>{config.itemLabel.charAt(0).toUpperCase() + config.itemLabel.slice(1)} ({todayLabel})</span>
         </h3>
-        <p className="text-[11.5px] text-text-secondary mt-1 font-medium">
+        <p className="text-[10.5px] md:text-[11.5px] text-text-secondary mt-1 font-medium">
           Today, you received {statusItems.length} {config.itemLabel}. Here is the breakdown:
         </p>
       </div>
 
       {/* Actions / Status Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-[13px]">
+      <div className="overflow-x-auto pb-1 scrollbar-hide">
+        <table className="w-full text-left border-collapse text-[10.5px] md:text-[13px] min-w-[450px]">
           <thead>
             <tr className="border-b border-border-soft text-text-tertiary font-bold">
               <th className="pb-2 font-semibold">Sender</th>
@@ -65,13 +65,13 @@ export function ChatSummaryCard({ todayLabel, statusItems, takeaways, activePlat
             </tr>
           </thead>
           <tbody className="divide-y divide-border-soft/45 font-medium">
-            {statusItems.map((item) => (
-              <tr key={item.id} className="text-text-primary">
+            {statusItems.map((item, index) => (
+              <tr key={`${item.id}-${index}`} className="text-text-primary">
                 <td className="py-2.5 truncate max-w-[120px] font-semibold">{item.from}</td>
                 <td className="py-2.5 text-text-secondary truncate max-w-[220px]">{item.title}</td>
                 <td className="py-2.5">
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    className={`text-[9.5px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                       item.priority === "high"
                         ? "text-danger bg-danger/5 border-danger/15"
                         : item.requiresFollowUp
@@ -101,10 +101,10 @@ export function ChatSummaryCard({ todayLabel, statusItems, takeaways, activePlat
 
       {/* Key Takeaways */}
       <div className="pt-3.5 border-t border-border-soft flex flex-col gap-2">
-        <p className="text-[12px] font-bold text-text-tertiary uppercase tracking-wider">Key Takeaways:</p>
-        <ul className="list-disc list-inside text-[13px] text-text-secondary leading-relaxed font-medium space-y-1.5 pl-1">
-          {takeaways.map((t) => (
-            <li key={t.id}>
+        <p className="text-[10.5px] md:text-[12px] font-bold text-text-tertiary uppercase tracking-wider">Key Takeaways:</p>
+        <ul className="list-disc list-inside text-[10.5px] md:text-[13px] text-text-secondary leading-relaxed font-medium space-y-1.5 pl-1">
+          {takeaways.map((t, index) => (
+            <li key={`${t.id}-${index}`}>
               <span className="font-semibold text-text-primary">{t.from}:</span> {t.snippet}
             </li>
           ))}
@@ -116,9 +116,9 @@ export function ChatSummaryCard({ todayLabel, statusItems, takeaways, activePlat
 
       {/* Card Footer Badge */}
       <div className="pt-4 border-t border-border-soft flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[11px] text-text-secondary font-semibold">
+        <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] text-text-secondary font-semibold">
           <span className="text-text-tertiary">Ref:</span>
-          <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded-lg text-[10.5px] font-bold shadow-sm ${config.colorClass}`}>
+          <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded-lg text-[9.5px] md:text-[10.5px] font-bold shadow-sm ${config.colorClass}`}>
             <Icon className="w-3 h-3" /> {config.label}
           </span>
         </div>

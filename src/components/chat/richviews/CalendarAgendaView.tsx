@@ -32,9 +32,9 @@ export function CalendarAgendaView({ payload, richData }: CalendarAgendaViewProp
       <div className="flex items-center justify-between px-5 py-3 bg-surface-raised border-b border-border">
         <div className="flex items-center gap-2.5">
           <Calendar className="w-5 h-5 text-[#4285F4]" />
-          <span className="text-[14px] font-bold text-text-primary">{dateLabel}</span>
+          <span className="text-[10.5px] md:text-[14px] font-bold text-text-primary">{dateLabel}</span>
         </div>
-        <span className="text-[11px] font-medium text-text-secondary bg-surface px-2 py-0.5 rounded-full">{events.length} events</span>
+        <span className="text-[10px] md:text-[11px] font-medium text-text-secondary bg-surface px-2 py-0.5 rounded-full">{events.length} events</span>
       </div>
 
       {/* Timeline */}
@@ -51,7 +51,7 @@ export function CalendarAgendaView({ payload, richData }: CalendarAgendaViewProp
           return (
             <div key={idx} className="flex gap-3 py-2.5 group">
               {/* Time column */}
-              <div className="w-[70px] shrink-0 text-right text-[12px] text-text-secondary font-medium pt-0.5">
+              <div className="w-[70px] shrink-0 text-right text-[10.5px] md:text-[12px] text-text-secondary font-medium pt-0.5">
                 {startTime}
               </div>
 
@@ -59,8 +59,8 @@ export function CalendarAgendaView({ payload, richData }: CalendarAgendaViewProp
               <div className="flex-1 flex gap-3">
                 <div className="w-1 rounded-full shrink-0" style={{ backgroundColor: color }} />
                 <div className="flex-1 py-1.5 px-3 rounded-lg hover:bg-surface-raised transition-colors">
-                  <div className="text-[13px] font-bold text-text-primary">{event.summary}</div>
-                  <div className="flex items-center gap-3 mt-1 text-[11px] text-text-secondary">
+                  <div className="text-[10.5px] md:text-[13px] font-bold text-text-primary">{event.summary}</div>
+                  <div className="flex items-center gap-3 mt-1 text-[10px] md:text-[11px] text-text-secondary">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {startTime}{endTime ? ` – ${endTime}` : ""}
                     </span>
@@ -76,7 +76,7 @@ export function CalendarAgendaView({ payload, richData }: CalendarAgendaViewProp
                     )}
                   </div>
                   {event.description && (
-                    <div className="text-[12px] text-text-tertiary mt-1 truncate">{event.description}</div>
+                    <div className="text-[10px] md:text-[12px] text-text-tertiary mt-1 truncate">{event.description}</div>
                   )}
                 </div>
               </div>
@@ -85,7 +85,7 @@ export function CalendarAgendaView({ payload, richData }: CalendarAgendaViewProp
         })}
 
         {events.length === 0 && (
-          <div className="py-8 text-center text-text-tertiary text-[13px]">
+          <div className="py-8 text-center text-text-tertiary text-[10.5px] md:text-[13px]">
             No events scheduled for today.
           </div>
         )}

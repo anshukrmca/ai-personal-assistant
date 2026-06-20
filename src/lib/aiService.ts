@@ -16,4 +16,4 @@ export { mockChatAnswer, mockSummarize } from "./ai/mock";
 export { computeCounts, generateBriefing } from "./ai/briefing";
 export type { BriefingResult } from "./ai/briefing";
 
-export { answerChatQuestion, enhanceText } from "./ai/chat";
+export { answerChatQuestion, enhanceText, generateChatTitle } from "./ai/chat";

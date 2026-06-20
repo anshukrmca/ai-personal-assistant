@@ -69,14 +69,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Other platforms fall back to instant simulation connection
-  const integration = connectIntegration(session.userId, platform);
+  const integration = await connectIntegration(session.userId, platform);
 
-  const allIntegrations = getIntegrationsForUser(session.userId);
+  const allIntegrations = await getIntegrationsForUser(session.userId);
   const connectedSources = allIntegrations
     .filter((i) => i.status === "connected")
     .map((i) => platformToSource(i.platform)) as ItemSource[];
 
-  seedFeedForUser(session.userId, connectedSources);
+  await seedFeedForUser(session.userId, connectedSources);
 
   return NextResponse.json({ ok: true, integration });
 }

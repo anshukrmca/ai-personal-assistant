@@ -5,13 +5,28 @@ import AppShell from "@/components/AppShell";
 import { api } from "@/lib/apiClient";
 import type { FeedItem } from "@/lib/types";
 import { CalendarBriefingFeed } from "@/components/briefing/CalendarBriefingFeed";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function CalendarBriefingPage() {
   const router = useRouter();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setLoading(true);
+    try {
+      const res = await api.refreshBriefing();
+      setItems(res.items.filter(i => i.source === "google_calendar"));
+    } catch (err) {
+      console.error("Failed to refresh calendar briefing:", err);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     api.getBriefing().then((r) => {
@@ -22,17 +37,26 @@ export default function CalendarBriefingPage() {
 
   return (
     <AppShell>
-      <div className="px-6 py-8">
+      <div className="px-4 md:px-6 py-8">
         <button 
           onClick={() => router.push('/briefing')}
-          className="flex items-center gap-2 px-4 py-2 text-text-secondary hover:bg-surface-raised rounded-full transition-colors font-medium text-[13px] mb-6 cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 text-text-secondary hover:bg-surface-raised rounded-full transition-colors font-medium text-[10.5px] md:text-[13px] mb-6 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Briefing Hub
         </button>
-        <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm min-h-[400px]">
-          <h2 className="text-2xl font-bold mb-6 text-[#4285F4] flex items-center gap-2">
-             Calendar Briefing
-          </h2>
+        <div className="bg-surface border border-border rounded-3xl p-4 sm:p-6 shadow-sm min-h-[400px]">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#4285F4] flex items-center gap-2">
+               Calendar Briefing
+            </h2>
+            <button 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className={`p-2 rounded-xl border border-border/40 hover:bg-surface-raised text-text-secondary transition-all ${refreshing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <RotateCw className={`w-4.5 h-4.5 ${refreshing ? 'animate-spin text-accent' : ''}`} />
+            </button>
+          </div>
           {loading ? (
             <div className="flex flex-col gap-4 animate-pulse p-2">
               {[1, 2, 3].map((i) => (

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const priority = starred ? "high" : "low";
 
     // 1. Update local database
-    updateItemPriority(session.userId, itemId, priority);
+    await updateItemPriority(session.userId, itemId, priority);
 
     // 2. Update Gmail if applicable
     if (itemId.startsWith("gmail-")) {

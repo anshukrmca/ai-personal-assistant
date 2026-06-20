@@ -1,5 +1,5 @@
 import { getGoogleToken, saveGoogleToken } from "./db/tokens";
-import { readCollection, writeCollection } from "./db/jsonStore";
+import { getFeedForUser, insertFeedItems, deleteFeedItemsBySource } from "./db/feed";
 import type { FeedItem } from "./types";
 import { getIntegrationsForUser } from "./db/integrations";
 import { syncGmailData, sendGmailEmail as sendGmailEmailService, createGmailDraft as createGmailDraftService, toggleGmailStar as toggleGmailStarredService } from "./sync/gmailSyncService";
@@ -9,7 +9,7 @@ import { syncWhatsAppData } from "./sync/whatsappSyncService";
 
 // Refreshes the Google OAuth token if it's expired or about to expire
 async function getOrRefreshAccessToken(userId: string): Promise<string | null> {
-  const token = getGoogleToken(userId);
+  const token = await getGoogleToken(userId);
   if (!token) return null;
 
   const expiresTime = new Date(token.expiresAt).getTime();
@@ -61,7 +61,7 @@ export async function syncGoogleData(userId: string): Promise<void> {
   const accessToken = await getOrRefreshAccessToken(userId);
   if (!accessToken) return;
 
-  const integrations = getIntegrationsForUser(userId);
+  const integrations = await getIntegrationsForUser(userId);
   const gmailConnected = integrations.some((i) => i.platform === "gmail" && i.status === "connected");
   const calendarConnected = integrations.some(
     (i) => i.platform === "google_calendar" && i.status === "connected"
@@ -93,15 +93,16 @@ export async function syncGoogleData(userId: string): Promise<void> {
 
   // 3. Write items to the datastore database
   if (syncedItems.length > 0) {
-    const all = readCollection<FeedItem>("feedItems");
+    // Delete existing Gmail and Google Calendar items for this user to avoid duplication
+    const sourcesToDelete = [];
+    if (gmailConnected) sourcesToDelete.push("gmail");
+    if (calendarConnected) sourcesToDelete.push("google_calendar");
     
-    // Filter out previous Gmail or Google Calendar items for this user to avoid duplication
-    const cleanItems = all.filter(
-      (item) =>
-        item.userId !== userId || (item.source !== "gmail" && item.source !== "google_calendar")
-    );
+    if (sourcesToDelete.length > 0) {
+      await deleteFeedItemsBySource(userId, sourcesToDelete);
+    }
 
-    writeCollection("feedItems", [...cleanItems, ...syncedItems]);
+    await insertFeedItems(syncedItems);
     console.log(`Successfully synced ${syncedItems.length} real Google items for user ${userId}`);
   }
 }
@@ -208,7 +209,7 @@ export async function updateCalendarEvent(
       googleEventId = eventId.slice(5);
     } else {
       // Smart lookup: if the AI passed a title, find the real ID from the local feed cache
-      const allItems = readCollection<FeedItem>("feedItems");
+      const allItems = await getFeedForUser(userId);
       const match = allItems.find(i => i.source === "google_calendar" && i.userId === userId && i.title.toLowerCase() === eventId.toLowerCase());
       if (match && match.id.startsWith('gcal-')) {
         googleEventId = match.id.slice(5);
@@ -284,7 +285,7 @@ export async function cancelCalendarEvent(
       googleEventId = eventId.slice(5);
     } else {
       // Smart lookup: if the AI passed a title, find the real ID from the local feed cache
-      const allItems = readCollection<FeedItem>("feedItems");
+      const allItems = await getFeedForUser(userId);
       const match = allItems.find(i => i.source === "google_calendar" && i.userId === userId && i.title.toLowerCase() === eventId.toLowerCase());
       if (match && match.id.startsWith('gcal-')) {
         googleEventId = match.id.slice(5);

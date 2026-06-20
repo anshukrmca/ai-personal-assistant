@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { readCollection, updateWhere } from "@/lib/db/jsonStore";
+import { findMessageById, updateMessageActions } from "@/lib/db/messages";
 import { ChatMessage } from "@/lib/types";
 import { sendGmailEmail, createGmailDraft, createCalendarEvent } from "@/lib/syncService";
 import { z } from "zod";
@@ -27,8 +27,7 @@ export async function POST(req: Request) {
     }
 
     const { messageId, actionId, payloadOverride } = parsed.data;
-    const messages = readCollection<ChatMessage>(COLLECTION);
-    const message = messages.find((m) => m.id === messageId);
+    const message = await findMessageById(messageId);
 
     if (!message || message.userId !== session.userId) {
       return NextResponse.json({ error: "Message not found" }, { status: 404 });
@@ -49,10 +48,7 @@ export async function POST(req: Request) {
 
     if (payloadOverride) {
       payload = { ...payload, ...payloadOverride };
-      updateWhere<ChatMessage>(
-        COLLECTION,
-        (m) => m.id === messageId,
-        (m) => {
+      await updateMessageActions(messageId, (m) => {
           if (m.actions && actionId) {
             const updatedActions = m.actions.map(a => a.id === actionId ? { ...a, payload } : a);
             return { ...m, actions: updatedActions };
@@ -67,33 +63,61 @@ export async function POST(req: Request) {
     } else if (type === "draft") {
       success = await createGmailDraft(session.userId, payload.to, payload.subject, payload.body);
     } else if (type === "calendar") {
+      // Fallback to next hour if AI didn't provide a valid startTime
+      let startStr = payload.startTime;
+      if (!startStr) {
+         const d = new Date();
+         d.setHours(d.getHours() + 1);
+         startStr = d.toISOString();
+      }
+      let attendeesArr = payload.attendees || [];
+      if (typeof attendeesArr === "string") attendeesArr = [attendeesArr];
+
       success = await createCalendarEvent(
         session.userId,
-        payload.summary,
+        payload.summary || "New Meeting",
         payload.description || "",
-        payload.startTime,
+        startStr,
         payload.durationMinutes || 30,
-        payload.attendees || []
+        attendeesArr
       );
     } else if (type === "calendar_update") {
       const { updateCalendarEvent } = await import("@/lib/syncService");
-      success = await updateCalendarEvent(
-        session.userId,
-        payload.targetEventId || payload.targetEvent, // Accept either ID or name, though ID is preferred
-        {
-          summary: payload.summary,
-          description: payload.description,
-          startTime: payload.startTime,
-          durationMinutes: payload.durationMinutes,
-          attendees: payload.attendees,
-        }
-      );
+      const target = payload.targetEventId || payload.targetEvent;
+      if (!target) {
+         console.error("calendar_update failed: No target event specified");
+         success = false;
+      } else {
+         let startStr = payload.startTime;
+         if (startStr && isNaN(new Date(startStr).getTime())) startStr = undefined; // Strip invalid dates
+         
+         let attendeesArr = payload.attendees;
+         if (typeof attendeesArr === "string") attendeesArr = [attendeesArr];
+
+         success = await updateCalendarEvent(
+           session.userId,
+           target,
+           {
+             summary: payload.summary,
+             description: payload.description,
+             startTime: startStr,
+             durationMinutes: payload.durationMinutes,
+             attendees: attendeesArr,
+           }
+         );
+      }
     } else if (type === "calendar_cancel") {
       const { cancelCalendarEvent } = await import("@/lib/syncService");
-      success = await cancelCalendarEvent(
-        session.userId,
-        payload.targetEventId || payload.targetEvent
-      );
+      const target = payload.targetEventId || payload.targetEvent;
+      if (!target) {
+         console.error("calendar_cancel failed: No target event specified");
+         success = false;
+      } else {
+         success = await cancelCalendarEvent(
+           session.userId,
+           target
+         );
+      }
     } else if (type === "whatsapp") {
       console.log("[Mock] Sending WhatsApp to:", payload.to, "Body:", payload.body);
       await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API delay
@@ -101,10 +125,7 @@ export async function POST(req: Request) {
     }
 
     if (success) {
-      updateWhere<ChatMessage>(
-        COLLECTION,
-        (m) => m.id === messageId,
-        (m) => {
+      await updateMessageActions(messageId, (m) => {
           if (m.actions && actionId) {
             const updatedActions = m.actions.map(a => a.id === actionId ? { ...a, status: "completed" as const } : a);
             return { ...m, actions: updatedActions };
@@ -114,10 +135,7 @@ export async function POST(req: Request) {
       );
       return NextResponse.json({ ok: true });
     } else {
-      updateWhere<ChatMessage>(
-        COLLECTION,
-        (m) => m.id === messageId,
-        (m) => {
+      await updateMessageActions(messageId, (m) => {
           if (m.actions && actionId) {
             const updatedActions = m.actions.map(a => a.id === actionId ? { ...a, status: "failed" as const } : a);
             return { ...m, actions: updatedActions };
@@ -143,10 +161,7 @@ export async function DELETE(req: Request) {
     const actionId = url.searchParams.get("actionId");
     if (!messageId) return NextResponse.json({ error: "Missing messageId" }, { status: 400 });
 
-    updateWhere<ChatMessage>(
-      COLLECTION,
-      (m) => m.id === messageId,
-      (m) => {
+    await updateMessageActions(messageId, (m) => {
           if (m.actions && actionId) {
             const updatedActions = m.actions.map(a => a.id === actionId ? { ...a, status: "failed" as const } : a);
             return { ...m, actions: updatedActions };

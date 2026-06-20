@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { phoneNumber, code, channel } = parsed.data;
-  const result = verifyOtp(phoneNumber, code);
+  const result = await verifyOtp(phoneNumber, code);
 
   if (!result.ok) {
     const messages: Record<string, string> = {
@@ -36,17 +36,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: messages[result.reason] }, { status: 400 });
   }
 
-  let user = getUserByPhone(phoneNumber);
+  let user = await getUserByPhone(phoneNumber);
   let isNewUser = false;
 
   if (!user) {
-    user = createUser(phoneNumber, channel);
+    user = await createUser(phoneNumber, channel);
     isNewUser = true;
     // Give new users disconnected rows for every platform up front
-    getIntegrationsForUser(user.userId);
-    seedFeedForUser(user.userId, []);
+    await getIntegrationsForUser(user.userId);
+    await seedFeedForUser(user.userId, []);
   } else {
-    touchLastLogin(user.userId);
+    await touchLastLogin(user.userId);
   }
 
   const token = signSession({ userId: user.userId, phoneNumber: user.phoneNumber });

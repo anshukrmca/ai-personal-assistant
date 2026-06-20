@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { readCollection, updateWhere } from "@/lib/db/jsonStore";
+import { findMessageById, updateMessageActions } from "@/lib/db/messages";
 import { ChatMessage } from "@/lib/types";
 import { enhanceText } from "@/lib/aiService";
 import { z } from "zod";
@@ -26,8 +26,7 @@ export async function POST(req: Request) {
     }
 
     const { messageId, actionId } = parsed.data;
-    const messages = readCollection<ChatMessage>(COLLECTION);
-    const message = messages.find((m) => m.id === messageId);
+    const message = await findMessageById(messageId);
 
     if (!message || message.userId !== session.userId) {
       return NextResponse.json({ error: "Message not found" }, { status: 404 });
@@ -54,10 +53,7 @@ export async function POST(req: Request) {
       }
     }
 
-    updateWhere<ChatMessage>(
-      COLLECTION,
-      (m) => m.id === messageId,
-      (m) => {
+    await updateMessageActions(messageId, (m) => {
         if (m.actions && actionId) {
           const updatedActions = m.actions.map(a => a.id === actionId ? { ...a, payload: newPayload } : a);
           return { ...m, actions: updatedActions };

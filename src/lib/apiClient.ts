@@ -57,22 +57,32 @@ export const api = {
       { method: "POST" }
     ),
 
-  askChat: (question: string, activePlatform?: string) =>
+  getChatSessions: () =>
+    request<{ sessions: import("@/lib/types").ChatSession[] }>("/api/chat/sessions"),
+
+  createChatSession: (title?: string) =>
+    request<import("@/lib/types").ChatSession>("/api/chat/sessions", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+
+  deleteChatSession: (chatId: string) =>
+    request<{ success: boolean }>(`/api/chat/sessions/${chatId}`, { method: "DELETE" }),
+
+  askChat: (question: string, chatId: string, activePlatform?: string) =>
     request<{ answer: string; messageId: string; actions?: import("@/lib/types").ChatAction[]; action?: import("@/lib/types").ChatAction }>("/api/chat/ask", {
       method: "POST",
       body: JSON.stringify({
         question,
+        chatId,
         activePlatform,
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         localTime: new Date().toLocaleTimeString(),
       }),
     }),
 
-  getChatHistory: () =>
-    request<{ history: import("@/lib/types").ChatMessage[] }>("/api/chat/ask"),
-
-  clearChatHistory: () =>
-    request<{ ok: boolean }>("/api/chat/ask", { method: "DELETE" }),
+  getChatHistory: (chatId: string) =>
+    request<{ history: import("@/lib/types").ChatMessage[] }>(`/api/chat/ask?chatId=${chatId}`),
 
   executeAction: (messageId: string, actionId: string, payloadOverride?: any) =>
     request<{ ok: boolean }>("/api/actions/execute", {

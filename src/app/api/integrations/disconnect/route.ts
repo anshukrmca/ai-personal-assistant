@@ -30,14 +30,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
   }
 
-  disconnectIntegration(session.userId, parsed.data.platform);
+  await disconnectIntegration(session.userId, parsed.data.platform);
 
-  const allIntegrations = getIntegrationsForUser(session.userId);
+  const allIntegrations = await getIntegrationsForUser(session.userId);
   const connectedSources = allIntegrations
     .filter((i) => i.status === "connected")
     .map((i) => platformToSource(i.platform)) as ItemSource[];
 
-  seedFeedForUser(session.userId, connectedSources);
+  await seedFeedForUser(session.userId, connectedSources);
 
   return NextResponse.json({ ok: true });
 }

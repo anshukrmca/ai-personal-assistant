@@ -33,17 +33,17 @@ export function GmailInboxView({ payload, richData, onEmailClick }: GmailInboxVi
           <div className="w-5 h-5 rounded bg-[#EA4335]/10 flex items-center justify-center">
             <span className="text-[10px] font-bold text-[#EA4335]">M</span>
           </div>
-          <span className="text-[13px] font-bold text-text-primary">{folder}</span>
-          <span className="text-[11px] font-medium text-text-secondary bg-surface px-2 py-0.5 rounded-full">{emails.length}</span>
+          <span className="text-[12.5px] md:text-[13px] font-bold text-text-primary">{folder}</span>
+          <span className="text-[10px] md:text-[11px] font-medium text-text-secondary bg-surface px-2 py-0.5 rounded-full">{emails.length}</span>
         </div>
-        <span className="text-[11px] font-medium text-text-tertiary">1–{emails.length} of {emails.length}</span>
+        <span className="text-[10px] md:text-[11px] font-medium text-text-tertiary">1–{emails.length} of {emails.length}</span>
       </div>
 
       {/* Email rows */}
       <div className="divide-y divide-border">
         {emails.map((email, idx) => (
           <button
-            key={email.id || idx}
+            key={`${email.id || 'email'}-${idx}`}
             onClick={() => onEmailClick?.(email)}
             className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface-raised hover:shadow-[inset_3px_0_0_0_#1a73e8] transition-all cursor-pointer group ${
               !email.isRead ? "bg-surface" : "bg-surface-raised/50"
@@ -59,7 +59,7 @@ export function GmailInboxView({ payload, richData, onEmailClick }: GmailInboxVi
             />
 
             {/* Sender */}
-            <span className={`w-[140px] shrink-0 truncate text-[13px] ${
+            <span className={`w-[110px] sm:w-[140px] shrink-0 truncate text-[10.5px] md:text-[13px] ${
               !email.isRead ? "font-bold text-text-primary" : "font-medium text-text-secondary"
             }`}>
               {email.from}
@@ -67,18 +67,18 @@ export function GmailInboxView({ payload, richData, onEmailClick }: GmailInboxVi
 
             {/* Subject + Snippet */}
             <div className="flex-1 flex items-baseline gap-1.5 truncate min-w-0">
-              <span className={`text-[13px] truncate shrink-0 max-w-[50%] ${
+              <span className={`text-[10.5px] md:text-[13px] truncate shrink-0 max-w-[50%] ${
                 !email.isRead ? "font-bold text-text-primary" : "font-medium text-text-secondary"
               }`}>
                 {email.subject}
               </span>
-              <span className="text-[13px] text-text-tertiary truncate hidden sm:inline">
+              <span className="text-[10.5px] md:text-[13px] text-text-tertiary truncate hidden sm:inline">
                 — {email.snippet}
               </span>
             </div>
 
             {/* Time */}
-            <span className={`text-[12px] shrink-0 ${
+            <span className={`text-[11px] md:text-[12px] shrink-0 ${
               !email.isRead ? "font-bold text-text-primary" : "font-medium text-text-secondary"
             }`}>
               {email.time}
@@ -88,7 +88,7 @@ export function GmailInboxView({ payload, richData, onEmailClick }: GmailInboxVi
       </div>
 
       {emails.length === 0 && (
-        <div className="px-4 py-8 text-center text-text-tertiary text-[13px]">
+        <div className="px-4 py-8 text-center text-text-tertiary text-[12.5px] md:text-[13px]">
           No emails found in {folder}.
         </div>
       )}

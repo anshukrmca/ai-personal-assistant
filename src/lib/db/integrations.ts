@@ -1,11 +1,13 @@
-import { findMany, insertOne, updateWhere } from "./jsonStore";
+import { getDb } from "./mongoClient";
 import type { Integration, IntegrationPlatform, IntegrationStatus } from "../types";
 import { ALL_PLATFORMS } from "../platformMeta";
 
 const COLLECTION = "integrations";
 
-export function getIntegrationsForUser(userId: string): Integration[] {
-  const existing = findMany<Integration>(COLLECTION, (i) => i.userId === userId);
+export async function getIntegrationsForUser(userId: string): Promise<Integration[]> {
+  const db = await getDb();
+  const cursor = await db.collection(COLLECTION).find({ userId });
+  const existing = (await cursor.toArray()) as unknown as Integration[];
   const existingPlatforms = new Set(existing.map((i) => i.platform));
 
   // Ensure every platform has a row (defaults to disconnected) so the UI
@@ -25,41 +27,46 @@ export function getIntegrationsForUser(userId: string): Integration[] {
   );
 }
 
-export function connectIntegration(
+export async function connectIntegration(
   userId: string,
   platform: IntegrationPlatform
-): Integration {
+): Promise<Integration> {
+  const db = await getDb();
   const now = new Date().toISOString();
-  const existing = findMany<Integration>(
-    COLLECTION,
-    (i) => i.userId === userId && i.platform === platform
-  );
-
-  if (existing.length === 0) {
-    return insertOne<Integration>(COLLECTION, {
-      userId,
-      platform,
-      status: "connected",
+  
+  const updateDoc = {
+    $set: {
+      status: "connected" as IntegrationStatus,
       connectedAt: now,
       lastSyncedAt: now,
-    });
-  }
+    },
+    $setOnInsert: {
+      userId,
+      platform,
+    }
+  };
 
-  const updated = updateWhere<Integration>(
-    COLLECTION,
-    (i) => i.userId === userId && i.platform === platform,
-    (i) => ({ ...i, status: "connected" as IntegrationStatus, connectedAt: now, lastSyncedAt: now })
+  const result = await db.collection(COLLECTION).findOneAndUpdate(
+    { userId, platform },
+    updateDoc,
+    { returnDocument: "after", upsert: true }
   );
-  return updated.find((i) => i.userId === userId && i.platform === platform)!;
+
+  return result as unknown as Integration;
 }
 
-export function disconnectIntegration(
+export async function disconnectIntegration(
   userId: string,
   platform: IntegrationPlatform
-): void {
-  updateWhere<Integration>(
-    COLLECTION,
-    (i) => i.userId === userId && i.platform === platform,
-    (i) => ({ ...i, status: "disconnected" as IntegrationStatus, connectedAt: null })
+): Promise<void> {
+  const db = await getDb();
+  await db.collection(COLLECTION).updateOne(
+    { userId, platform },
+    {
+      $set: {
+        status: "disconnected" as IntegrationStatus,
+        connectedAt: null,
+      },
+    }
   );
 }
