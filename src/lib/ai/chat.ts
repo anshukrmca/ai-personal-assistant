@@ -239,6 +239,7 @@ export async function answerChatQuestion(
     `- RECIPIENT RESOLUTION: If the user specifies a recipient by name (e.g. "email Rohan"), search the connected data (Gmail and Calendar items) for a sender or attendee matching that name to find their real email address. If not found, use their-name@example.com.\n` +
     `- EVENT IDs: When updating or cancelling, ALWAYS try to find the actual event ID (e.g., gcal-...) from the provided connected data context. Only use the title as a last resort.\n` +
     `- STRICTLY RAW JSON: The content inside your XML tags (e.g. <email_action>) MUST BE PURE, VALID JSON ONLY. Do NOT put any markdown text, explanations, or **bold** text inside the XML tags. Only output the JSON object { ... } inside the tags.\n` +
+    `- NO MONOLOGUE: Do NOT output your internal "thinking process", step-by-step reasoning, or monologue (e.g., "The user wants to... I need to..."). Provide ONLY a brief, conversational reply to the user followed by the XML blocks.\n` +
     `- Inform the user in your text message about the action you are taking.`;
 
   try {

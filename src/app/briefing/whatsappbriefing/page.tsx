@@ -25,7 +25,7 @@ export default function WhatsAppBriefingPage() {
       <div className="px-4 md:px-6 py-8">
         <button 
           onClick={() => router.push('/briefing')}
-          className="flex items-center gap-2 px-4 py-2 text-text-secondary hover:bg-surface-raised rounded-full transition-colors font-medium text-[10.5px] md:text-[13px] mb-6 cursor-pointer"
+          className="cursor-pointer flex items-center gap-2 px-4 py-2 text-text-secondary hover:bg-surface-raised rounded-full transition-colors font-medium text-[10.5px] md:text-[13px] mb-6 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Briefing Hub
         </button>

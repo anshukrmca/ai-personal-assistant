@@ -2,7 +2,7 @@
 // architecture doc (see Section 10: Database Schema) so swapping the
 // storage engine later doesn't require touching application code.
 
-export type AuthProvider = "sms" | "whatsapp";
+export type AuthProvider = "sms" | "whatsapp" | "google" | "linkedin" | "email";
 
 export interface User {
   userId: string;
@@ -11,6 +11,10 @@ export interface User {
   name: string;
   avatar: string; // emoji placeholder, swap for real URL later
   email: string | null;
+  username: string | null;
+  country: string | null;
+  timezone: string | null;
+  bio: string | null;
   createdAt: string;
   lastLogin: string;
 }

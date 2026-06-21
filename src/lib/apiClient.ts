@@ -24,9 +24,21 @@ export const api = {
       { method: "POST", body: JSON.stringify({ phoneNumber, code, channel }) }
     ),
 
+  verifyFirebaseToken: (idToken: string) =>
+    request<{ ok: boolean; isNewUser: boolean; user: any }>(
+      "/api/auth/session",
+      { method: "POST", body: JSON.stringify({ idToken }) }
+    ),
+
   me: () =>
     request<{ user: { userId: string; phoneNumber: string; name: string; avatar: string; email: string | null } | null }>(
       "/api/auth/me"
+    ),
+
+  updateProfile: (data: { name?: string; email?: string; avatar?: string }) =>
+    request<{ user: { userId: string; phoneNumber: string; name: string; avatar: string; email: string | null } }>(
+      "/api/auth/me",
+      { method: "POST", body: JSON.stringify(data) }
     ),
 
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),

@@ -10,21 +10,44 @@ export async function getUserByPhone(phoneNumber: string): Promise<User | null> 
   return user ? (user as unknown as User) : null;
 }
 
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const db = await getDb();
+  const user = await db.collection(COLLECTION).findOne({ email });
+  return user ? (user as unknown as User) : null;
+}
+
 export async function getUserById(userId: string): Promise<User | null> {
   const db = await getDb();
   const user = await db.collection(COLLECTION).findOne({ userId });
   return user ? (user as unknown as User) : null;
 }
 
-export async function createUser(phoneNumber: string, authProvider: AuthProvider): Promise<User> {
+export async function createUser(
+  authProvider: AuthProvider,
+  data: {
+    userId?: string;
+    phoneNumber?: string;
+    email?: string | null;
+    name?: string;
+    avatar?: string;
+    username?: string;
+    country?: string;
+    timezone?: string;
+    bio?: string;
+  }
+): Promise<User> {
   const now = new Date().toISOString();
   const user: User = {
-    userId: uuid(),
-    phoneNumber,
+    userId: data.userId || uuid(),
+    phoneNumber: data.phoneNumber || "",
     authProvider,
-    name: "New User",
-    avatar: "🙂",
-    email: null,
+    name: data.name || "New User",
+    avatar: data.avatar || "🙂",
+    email: data.email || null,
+    username: data.username || null,
+    country: data.country || null,
+    timezone: data.timezone || null,
+    bio: data.bio || null,
     createdAt: now,
     lastLogin: now,
   };

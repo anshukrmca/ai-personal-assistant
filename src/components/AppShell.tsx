@@ -137,10 +137,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <p className="text-[11px] font-bold text-text-tertiary uppercase tracking-wider">Preferences</p>
               </div>
               
-              <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13.5px] font-bold cursor-pointer">
+              <Link 
+                href="/settings"
+                onClick={() => setIsProfileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13.5px] font-bold cursor-pointer"
+              >
                 <Settings className="w-4 h-4" />
                 Account Settings
-              </button>
+              </Link>
               
               <button 
                 onClick={toggleTheme}
@@ -237,7 +241,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </div>
                     
                     <Link 
-                      href="/integrations" 
+                      href="/settings" 
                       onClick={() => setIsProfileMenuOpen(false)}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13px] font-bold"
                     >

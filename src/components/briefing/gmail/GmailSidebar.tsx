@@ -25,7 +25,7 @@ export function GmailSidebar({
       <div className="px-3 pb-3">
         <button 
           onClick={() => router.push('/briefing')}
-          className="flex items-center gap-2 px-4 py-2.5 text-text-secondary hover:bg-surface-raised rounded-xl transition-all font-semibold text-[10.5px] md:text-[13px] mb-4 border border-border/50 hover:text-text-primary hover:-translate-x-1"
+          className="cursor-pointer flex items-center gap-2 px-4 py-2.5 text-text-secondary hover:bg-surface-raised rounded-xl transition-all font-semibold text-[10.5px] md:text-[13px] mb-4 border border-border/50 hover:text-text-primary hover:-translate-x-1"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Hub
         </button>

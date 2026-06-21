@@ -1,26 +1,15 @@
-import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { adminAuth } from "./firebase/admin";
 import type { SessionPayload } from "./types";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const SESSION_COOKIE = "ai_assistant_session";
-const SESSION_EXPIRY_SECONDS = 60 * 60 * 24 * 7; // 7 days, matches .env.example
+const SESSION_EXPIRY_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const SESSION_EXPIRY_MS = SESSION_EXPIRY_SECONDS * 1000;
 
-export function signSession(payload: SessionPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: SESSION_EXPIRY_SECONDS });
-}
-
-export function verifySession(token: string): SessionPayload | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as SessionPayload;
-  } catch {
-    return null;
-  }
-}
-
-export async function setSessionCookie(token: string) {
+export async function createAndSetSessionCookie(idToken: string) {
+  const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: SESSION_EXPIRY_MS });
   const store = await cookies();
-  store.set(SESSION_COOKIE, token, {
+  store.set(SESSION_COOKIE, sessionCookie, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -38,5 +27,14 @@ export async function getSession(): Promise<SessionPayload | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return verifySession(token);
+  
+  try {
+    const decodedToken = await adminAuth.verifySessionCookie(token, true);
+    return {
+      userId: decodedToken.uid,
+      phoneNumber: decodedToken.phone_number || "",
+    };
+  } catch (err) {
+    return null;
+  }
 }

@@ -42,3 +42,5 @@ next-env.d.ts
 
 # local file-based datastore (mock DB)
 /data/*.json
+
+firebase-service-account.json
