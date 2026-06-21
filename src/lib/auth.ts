@@ -43,8 +43,8 @@ export async function getSession(): Promise<SessionPayload | null> {
         userId: decodedIdToken.uid,
         phoneNumber: decodedIdToken.phone_number || "",
       };
-    } catch (err2) {
-      console.error("verifySessionCookie and verifyIdToken both failed:", err2);
+    } catch (err2: any) {
+      console.warn("[AUTH] Invalid session cookie or token:", err2.message);
       // Clear the corrupted/expired cookie so the user isn't stuck in a redirect loop
       // (Wrapped in try/catch because Server Components cannot modify cookies)
       try {

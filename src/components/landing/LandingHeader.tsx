@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, ArrowRight, Menu, X, Sun, Moon } from "lucide-react";
+import { Sparkles, ArrowRight, Menu, X, Sun, Moon, ChevronDown } from "lucide-react";
 import type { SessionPayload } from "@/lib/types";
 
 interface LandingHeaderProps {
@@ -58,7 +58,7 @@ export function LandingHeader({ session }: LandingHeaderProps) {
   // Prevent hydration mismatch for theme icon
   const renderThemeIcon = () => {
     if (!mounted) return <div className="w-5 h-5" />;
-    return theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />;
+    return theme === "light" ? <Moon className="w-5.5 h-5.5" /> : <Sun className="w-5.5 h-5.5" />;
   };
 
   return (
@@ -69,9 +69,9 @@ export function LandingHeader({ session }: LandingHeaderProps) {
       } ${
         isScrolled 
           ? "border-b border-slate-200 dark:border-white/[0.08] bg-white/85 dark:bg-[#030014]/85 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.1)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]" 
-          : "border-b border-slate-200 dark:border-white/[0.02] bg-white/40 dark:bg-[#030014]/40 backdrop-blur-md"
+          : "border-b border-transparent bg-transparent"
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-[#9061f9] flex items-center justify-center shadow-lg shadow-violet-600/30">
               <Sparkles className="w-4.5 h-4.5 text-white" />
@@ -87,14 +87,23 @@ export function LandingHeader({ session }: LandingHeaderProps) {
             <a href="#workflow" className="hover:text-slate-900 dark:hover:text-white transition-colors">How It Works</a>
             <a href="#integrations" className="hover:text-slate-900 dark:hover:text-white transition-colors">Integrations</a>
             <a href="#pricing" className="hover:text-slate-900 dark:hover:text-white transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-slate-900 dark:hover:text-white transition-colors">FAQ</a>
+            <div className="relative group cursor-pointer flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors py-2">
+              <span>Resources</span>
+              <ChevronDown className="w-4 h-4" />
+              {/* Simple hidden dropdown */}
+              <div className="absolute top-full left-0 mt-1 hidden group-hover:block w-48 bg-white dark:bg-[#0c0827] border border-slate-200 dark:border-white/[0.08] rounded-xl shadow-xl py-2 z-50">
+                <a href="#faq" className="block px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/[0.05] text-[13.5px]">FAQ</a>
+                <a href="#docs" className="block px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/[0.05] text-[13.5px]">Documentation</a>
+                <a href="#blog" className="block px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/[0.05] text-[13.5px]">Blog</a>
+              </div>
+            </div>
           </nav>
 
           {/* Nav CTAs & Theme Toggle */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-6">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors cursor-pointer"
+              className="p-2 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
               aria-label="Toggle Theme"
             >
               {renderThemeIcon()}
@@ -103,25 +112,25 @@ export function LandingHeader({ session }: LandingHeaderProps) {
             {session ? (
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-[14px] shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] cursor-pointer"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-violet-600 to-[#7e3af2] hover:brightness-110 text-white font-extrabold text-[14px] shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] cursor-pointer group"
               >
                 Go to Dashboard
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="px-4 py-2.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-[14.5px] transition-colors duration-300"
+                  className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-[14.5px] transition-colors duration-300"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/login"
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-[14.5px] shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] cursor-pointer"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-violet-600 to-[#7e3af2] hover:brightness-110 text-white font-extrabold text-[14.5px] shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] cursor-pointer group"
                 >
                   Get Started Free
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </>
             )}

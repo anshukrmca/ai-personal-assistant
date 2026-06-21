@@ -1,90 +1,95 @@
-# Aria — Personal AI Assistant (MVP)
+# Anshu AI Personal Assistant
 
-A full-stack working prototype of the personal AI assistant described in the
-architecture doc: phone/WhatsApp OTP login, an Integration Page to connect
-apps, a daily AI-generated briefing, and a chat assistant — all running on
-**mock data** so it works immediately with zero API keys, and upgrades to
-real providers as you plug keys in.
+Anshu AI is a beautiful, premium, responsive personal AI assistant dashboard. It features a stunning dark-themed glassmorphic landing page, a secure phone + OTP authentication flow, an Integrations hub to connect your entire workspace stack, a daily AI-generated briefing dashboard powered by Recharts, and an AI chat assistant.
 
-## Stack
+---
 
-- **Framework:** Next.js 15 (App Router, TypeScript) — frontend + backend API routes in one app
-- **Database:** File-based JSON store at `/data` (`src/lib/db/jsonStore.ts`) — swap for InsForge/Postgres later without touching application code
-- **Auth:** Phone + OTP (mock Sent.dm), JWT session cookie
-- **AI:** Mock summarizer/chat by default; calls the real Anthropic API automatically once `ANTHROPIC_API_KEY` is set
+## 🚀 Key Features
 
-## Getting started (Windows)
+1. **High-Fidelity Landing Page**: Fully responsive dark-themed landing page with smooth micro-interactions, symmetric feature grids, visual workflow pipelines, a mockup actions panel, integration tiles, togglable monthly/yearly pricing plans, FAQ accordions, and a complete links footer with newsletter subscription.
+2. **Unified Dashboard (Briefing)**: Visualized daily dashboard with interactive Recharts activity graphs, productivity insight charts, upcoming schedule calendars, and an aggregated recent activity feed.
+3. **App Integrations**: Simulations for connecting **Gmail, Google Calendar, Slack, Notion, Microsoft Outlook, Microsoft Teams, Trello, and Asana** via OAuth 2.0 simulations, seeding realistic mock notifications, emails, and tasks instantly.
+4. **Interactive Autopilot (Human-in-the-Loop)**: AI reasoning executes commands and creates dynamic Action Cards (Daily Schedules, Reminders, Draft Emails) requiring one-click human approval or editing before dispatch.
+5. **AI Chat (Ask Anshu)**: A responsive workspace chat terminal allowing you to query, search, and manage your connected accounts. Uses local keyword search in mock mode and unlocks full context reasoning when Anthropic API keys are set.
 
-```powershell
-cd "E:\OWN Project\Ai personal assistant"
-npm install
-copy .env.example .env.local
-npm run dev
-```
+---
 
-Open **http://localhost:3000** — you'll land on the login screen.
+## 🛠️ Stack
 
-### Logging in (mock mode)
+- **Framework**: Next.js 16 (App Router, Turbopack)
+- **Styling**: Tailwind CSS & Vanilla CSS (supporting dark/light transitions)
+- **Data Visualization**: Recharts (with responsive responsive chart containers)
+- **Icons**: Lucide Icons & Custom optimized inline SVGs
+- **Database**: File-based local JSON store at `/data` (`src/lib/db/jsonStore.ts`) — easily swappable for Postgres or databases without touching layout layers
+- **Auth**: Phone + OTP session cookie validation (supporting mock sent.dm verification codes)
 
-1. Enter any phone number (e.g. `+91 98765 43210`) and pick SMS or WhatsApp.
-2. On the next screen, the OTP is shown directly in a "Dev mode" box (since
-   no real Sent.dm key is configured) — just copy it into the 6 boxes.
-3. You're in. First-time numbers automatically create a new account.
+---
 
-### Using the app
+## 💻 Getting Started (Windows / Local)
 
-1. **Integrations page** — click "Connect" on any app card (Gmail, Slack,
-   WhatsApp, etc). This simulates an OAuth connect — no real login happens
-   yet, but it stores a "connected" state and seeds realistic mock data
-   (emails, meetings, mentions) for that platform.
-2. **Briefing (dashboard)** — once at least one app is connected, an AI
-   summary, stat cards (meetings / alerts / follow-ups / messages), and a
-   full activity feed appear. Hit **Refresh** to regenerate.
-3. **Ask Aria (chat)** — ask questions about your connected data. In mock
-   mode this does simple keyword matching against synced items; with a real
-   `ANTHROPIC_API_KEY` it calls Claude with your synced data as context.
+1. **Clone the repository & install dependencies**:
+   ```powershell
+   npm install
+   ```
 
-## Project structure
+2. **Configure environment variables**:
+   Create a `.env.local` file by copying the template:
+   ```powershell
+   copy .env.example .env.local
+   ```
+
+3. **Start the development server**:
+   ```powershell
+   npm run dev
+   ```
+   Open **[http://localhost:3000](http://localhost:3000)** in your browser to experience the application.
+
+---
+
+## 📂 Project Structure
 
 ```
 src/
 ├── app/
-│   ├── (auth)/login/          # phone entry screen
-│   ├── (auth)/verify/         # OTP entry screen
-│   ├── dashboard/             # daily briefing UI
-│   ├── integrations/          # connect/disconnect apps UI
-│   ├── chat/                  # AI chat assistant UI
+│   ├── (auth)/login/          # Phone entry authentication screen
+│   ├── (auth)/verify/         # OTP verification screen
+│   ├── dashboard/             # Daily briefing charts & dashboard
+│   ├── integrations/          # Integrations connection dashboard
+│   ├── chat/                  # AI assistant workspace chat
 │   └── api/
-│       ├── auth/              # request-otp, verify-otp, logout, me
-│       ├── integrations/      # list, connect, disconnect
-│       ├── briefing/          # today, refresh
-│       └── chat/              # ask + history
+│       ├── auth/              # request-otp, verify-otp, session handlers
+│       ├── integrations/      # list, connect, disconnect API routes
+│       ├── briefing/          # today summaries and feed refresh
+│       └── chat/              # chat query history
 ├── components/
-│   └── AppShell.tsx           # sidebar nav shared across authenticated pages
+│   ├── landing/               # Header, Hero, Features, Workflow, Integrations, Pricing, FAQ, Footer
+│   ├── LandingPage.tsx        # Main landing page wrapper component
+│   └── AppShell.tsx           # Authenticated sidebar navigation wrapper
 ├── lib/
-│   ├── db/                    # repositories: users, otp, integrations, feed, briefings
-│   │   └── jsonStore.ts       # the underlying file-based "database"
-│   ├── auth.ts                # JWT session helpers
-│   ├── aiService.ts           # mock + real Claude-backed summarization/chat
-│   ├── apiClient.ts           # frontend fetch wrapper
-│   ├── platformMeta.ts        # icons/colors/actions per platform
-│   └── types.ts               # shared domain types (mirrors InsForge schema)
-└── middleware.ts               # route protection (redirects unauthenticated users)
+│   ├── db/                    # Local JSON database schemas & repositories
+│   ├── auth.ts                # JWT cookie verification helpers
+│   ├── aiService.ts           # Mock reasoning engine + real Claude API gateway
+│   ├── platformMeta.ts        # App logos, metadata, and seeded mock fields
+│   └── types.ts               # Shared domain TypeScript interfaces
+└── middleware.ts               # Next.js router guard checking session states
 ```
 
-## Wiring up real providers later
+---
 
-Everything is structured so each mock piece has one clear file to replace:
+## 🔒 Security & Extensibility
 
-| To enable | Edit | What changes |
+The workspace is designed for decoupling mock utilities from live providers:
+
+| Integration Goal | File Target | Implementation Path |
 |---|---|---|
-| Real AI briefings/chat | nothing — just set `ANTHROPIC_API_KEY` in `.env.local` | `aiService.ts` automatically switches from mock to real Claude calls |
-| Real SMS/WhatsApp OTP | `src/app/api/auth/request-otp/route.ts` | Call Sent.dm's API instead of generating a code locally |
-| Real Gmail/Slack/etc data | `src/app/api/integrations/connect/route.ts` + new `mcp-server/` (see architecture doc §16–20) | Replace `seedFeedForUser` mock seeding with real OAuth + MCP tool calls |
-| Real database | `src/lib/db/*.ts` | Swap the `jsonStore.ts` calls for InsForge/Postgres client calls — repository function signatures stay the same |
+| **Live AI Summary / Chat** | Just set `ANTHROPIC_API_KEY` in `.env.local` | `aiService.ts` automatically switches from keyword search to Claude |
+| **Real SMS/WhatsApp OTP** | `src/app/api/auth/request-otp/route.ts` | Integrate SMS gateways (e.g. Sent.dm or Twilio) |
+| **Live Syncing App Channels** | `src/app/api/integrations/connect/route.ts` | Swap mock seeding with real OAuth flow and MCP tool feeds |
+| **Enterprise Databases** | `src/lib/db/*.ts` | Replace local JSON-store with InsForge/Postgres repository clients |
 
-## Notes
+---
 
-- All data lives in `/data/*.json` (git-ignored) — delete that folder to reset the app to a clean state.
-- This is a single-user-per-browser-session demo; session is a JWT in an httpOnly cookie.
-- Mobile-responsive: sidebar collapses to a bottom tab bar under `md` breakpoint.
+## 📝 Notes
+
+- **Clean Slate**: Delete the generated `/data` directory (git-ignored) at any time to purge local credentials and reset to a clean state.
+- **Responsive Layouts**: Designed for high accessibility across mobile (collapsing to a bottom navigation tab bar), tablets, and ultrawide screens.

@@ -37,6 +37,7 @@ export default function ChatPage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlatform, setActivePlatform] = useState<string>("all");
+  const [user, setUser] = useState<{ name: string; avatar: string } | null>(null);
   const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -45,9 +46,13 @@ export default function ChatPage() {
       api.getChatSessions(),
       api.getBriefing(),
       api.getIntegrations(),
-    ]).then(async ([sessionsRes, briefingRes, integrationsRes]) => {
+      api.me().catch(() => ({ user: null }))
+    ]).then(async ([sessionsRes, briefingRes, integrationsRes, meRes]) => {
       setItems(briefingRes.items);
       setIntegrations(integrationsRes.integrations);
+      if (meRes?.user) {
+        setUser({ name: meRes.user.name, avatar: meRes.user.avatar });
+      }
 
       let initialSessions = sessionsRes.sessions;
       if (initialSessions.length === 0) {
@@ -294,6 +299,7 @@ export default function ChatPage() {
             activePlatform={activePlatform}
             onPlatformChange={handlePlatformChange}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            user={user}
           />
 
           <div className={`flex-1 overflow-y-auto overflow-x-hidden px-2 md:px-4 py-2 md:py-4 mb-1 md:mb-4 flex flex-col gap-6 scrollbar-hide rounded-3xl transition-colors duration-500 `}>
@@ -361,6 +367,7 @@ export default function ChatPage() {
                         onCancelAction={handleCancelAction}
                         onExecuteAction={handleExecuteAction}
                         onSendFollowUp={send}
+                        user={user}
                       />
                     ))}
 

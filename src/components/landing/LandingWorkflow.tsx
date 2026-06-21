@@ -1,191 +1,145 @@
 "use client";
 
-import { useState } from "react";
-import { Clock, Mail, Bot, Sparkles, Zap, Calendar, Compass } from "lucide-react";
-
-const Slack = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523 2.528 2.528 0 0 1-2.522-2.523 2.528 2.528 0 0 1 2.522-2.52h2.52v2.52zm1.261 0a2.528 2.528 0 0 1 2.52-2.52h5.043a2.528 2.528 0 0 1 2.522 2.52v5.042a2.528 2.528 0 0 1-2.522 2.52H8.824a2.528 2.528 0 0 1-2.52-2.52v-5.042zM8.824 5.043a2.528 2.528 0 0 1 2.52-2.522 2.528 2.528 0 0 1 2.522 2.522v2.52h-2.522a2.528 2.528 0 0 1-2.52-2.52zm0 1.261a2.528 2.528 0 0 1 2.52 2.52v5.043a2.528 2.528 0 0 1-2.522 2.522H3.782a2.528 2.528 0 0 1-2.52-2.522V8.824a2.528 2.528 0 0 1 2.52-2.52h5.042zm10.134 3.782a2.528 2.528 0 0 1 2.522-2.52 2.528 2.528 0 0 1 2.52 2.52v2.52h-2.52a2.528 2.528 0 0 1-2.522-2.52zm-1.262 0a2.528 2.528 0 0 1-2.52 2.52h-5.043a2.528 2.528 0 0 1-2.522-2.52V3.782a2.528 2.528 0 0 1 2.522-2.52h5.043a2.528 2.528 0 0 1 2.52 2.52v5.042zm-3.78 10.132a2.528 2.528 0 0 1-2.522 2.52 2.528 2.528 0 0 1-2.52-2.52v-2.52h2.52a2.528 2.528 0 0 1 2.522 2.52zm0-1.262a2.528 2.528 0 0 1-2.522-2.52v-5.043a2.528 2.528 0 0 1 2.52-2.522h5.043a2.528 2.528 0 0 1 2.522 2.522v5.043a2.528 2.528 0 0 1-2.522 2.52h-5.043z" />
-  </svg>
-);
+import { Compass, Sparkles, Mail, Calendar, Eye, Trash2, CheckCircle2 } from "lucide-react";
 
 export function LandingWorkflow() {
-  const [activeWorkflowStep, setActiveWorkflowStep] = useState(0);
-
-  const workflowSteps = [
+  const steps = [
     {
-      title: "1. Monitor Notifications",
-      description: "Anshu AI continuously scans your connected integrations (Gmail, WhatsApp, Slack, Calendar) to catch critical requests or scheduling needs.",
-      icon: Clock,
-      badge: "Listening",
-      color: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-      uiMockup: (
-        <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 shadow-2xl relative overflow-hidden transition-colors duration-300">
-          <div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-white/[0.05] pb-2 transition-colors duration-300">
-            <span className="text-[12px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 transition-colors duration-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              Incoming Streams
-            </span>
-            <span className="text-[10px] bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-mono transition-colors duration-300">Live</span>
-          </div>
-          <div className="space-y-2 text-[13px]">
-            <div className="p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-lg border border-slate-200 dark:border-white/[0.05] flex items-start gap-2.5 transition-colors duration-300">
-              <div className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
-                <Mail className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
-              </div>
-              <div>
-                <div className="font-bold text-slate-900 dark:text-white text-[12px] transition-colors duration-300">Sarah Jenkins (Google Calendar)</div>
-                <div className="text-slate-500 dark:text-slate-400 text-[11px] truncate transition-colors duration-300">Can we reschedule the sync to 3:00 PM today?</div>
-              </div>
-            </div>
-            <div className="p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-lg border border-slate-200 dark:border-white/[0.05] flex items-start gap-2.5 opacity-50 transition-colors duration-300">
-              <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
-                <Slack className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-              </div>
-              <div>
-                <div className="font-bold text-slate-900 dark:text-white text-[12px] transition-colors duration-300">David Miller</div>
-                <div className="text-slate-500 dark:text-slate-400 text-[11px] truncate transition-colors duration-300">Did you review the proposal slides yet?</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
+      num: "1",
+      title: "Monitor Notifications",
+      isLive: true,
+      description: "Anshu AI continuously scans your connected integrations (Email, Calendar, Slack, etc.) to catch critical requests or scheduling needs."
     },
     {
-      title: "2. Contextual Logic Processing",
-      description: "Our LLM reasoning engine processes the request. It retrieves calendar slot availability, compiles relevant details, and drafts appropriate actions.",
-      icon: Bot,
-      badge: "Reasoning",
-      color: "border-violet-500/30 text-violet-600 dark:text-violet-400 bg-violet-500/10",
-      uiMockup: (
-        <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 shadow-2xl relative overflow-hidden transition-colors duration-300">
-          <div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-white/[0.05] pb-2 transition-colors duration-300">
-            <span className="text-[12px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 transition-colors duration-300">
-              <Sparkles className="w-3.5 h-3.5 text-violet-500 dark:text-violet-400 animate-pulse" />
-              AI Cognitive Thought
-            </span>
-            <span className="text-[10px] bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full font-mono transition-colors duration-300">Thinking...</span>
-          </div>
-          <div className="space-y-2 text-[12.5px] font-mono text-slate-600 dark:text-slate-300 transition-colors duration-300">
-            <p className="text-violet-600 dark:text-violet-300">&gt; Parsing email from Sarah Jenkins...</p>
-            <p className="text-slate-500 dark:text-slate-400">&gt; Request: Reschedule sync to 3:00 PM today.</p>
-            <p className="text-slate-500 dark:text-slate-400">&gt; Querying local calendar availability...</p>
-            <p className="text-emerald-600 dark:text-emerald-400">&gt; Slot 3:00 PM - 3:30 PM is FREE.</p>
-            <p className="text-violet-600 dark:text-violet-300">&gt; Action drafted: Calendar Reschedule & Email Confirm.</p>
-          </div>
-        </div>
-      )
+      num: "2",
+      title: "Contextual Logic Processing",
+      isLive: false,
+      description: "Our AI analyzes the signals, processes the request, and creates a plan of action with relevant context."
     },
     {
-      title: "3. Interactive Execution Card",
-      description: "The action cards appear in your workspace dashboard. With a single click, you approve, customize, or reject them. Nothing sends without your word.",
-      icon: Zap,
-      badge: "Approval",
-      color: "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10",
-      uiMockup: (
-        <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 shadow-2xl relative overflow-hidden transition-colors duration-300">
-          <div className="flex items-center justify-between mb-2 border-b border-slate-200 dark:border-white/[0.05] pb-1.5 transition-colors duration-300">
-            <span className="text-[12px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 transition-colors duration-300">
-              <Zap className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-              Pending Action Card
-            </span>
-            <span className="text-[10px] bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono transition-colors duration-300">Needs Approval</span>
-          </div>
-          <div className="bg-slate-50 dark:bg-slate-950/80 border border-amber-200 dark:border-amber-500/20 rounded-lg p-3 transition-colors duration-300">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold text-slate-800 dark:text-slate-300 flex items-center gap-1 transition-colors duration-300">
-                <Calendar className="w-3 h-3 text-violet-500 dark:text-violet-400" /> Reschedule Sync
-              </span>
-              <span className="text-[9px] bg-violet-100 dark:bg-violet-500/15 text-violet-600 dark:text-violet-300 px-1.5 py-0.5 rounded-md transition-colors duration-300">3:00 PM Today</span>
-            </div>
-            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mb-3 leading-relaxed transition-colors duration-300">
-              Updates "Project Sync" in calendar and drafts confirmation reply to Sarah Jenkins.
-            </p>
-            <div className="flex gap-2">
-              <button className="flex-1 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white font-bold text-[11px] transition-colors cursor-pointer shadow-md shadow-violet-600/20">
-                Execute Action
-              </button>
-              <button className="px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-[11px] transition-colors cursor-pointer">
-                Edit
-              </button>
-            </div>
-          </div>
-        </div>
-      )
+      num: "3",
+      title: "Interactive Execution Card",
+      isLive: false,
+      description: "The action card appears in your workspace dashboard, with a simple click, you review, approve, or edit before execution."
     }
   ];
 
   return (
-    <section id="workflow" className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <section id="workflow" className="py-12 md:py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-16 flex flex-col gap-4">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-violet-500/20 bg-violet-50 dark:bg-violet-500/5 text-violet-600 dark:text-violet-400 text-[12px] font-bold w-fit mx-auto animate-float-fast transition-colors duration-300">
-          <Compass className="w-3.5 h-3.5" /> Visual Pipeline
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-violet-500/20 bg-violet-950/20 text-violet-400 text-[12px] font-bold w-fit mx-auto animate-float-fast">
+          <Compass className="w-3.5 h-3.5" /> How It Works
         </div>
-        <h2 className="font-display font-black text-3xl sm:text-4xl text-slate-900 dark:text-white leading-tight transition-colors duration-300">
+        <h2 className="font-display font-black text-3xl sm:text-4xl text-slate-900 dark:text-white leading-tight">
           How Your AI Assistant Comes to Life
         </h2>
-        <p className="text-slate-600 dark:text-slate-400 text-[15px] sm:text-[16px] transition-colors duration-300">
+        <p className="text-slate-600 dark:text-slate-400 text-[15px] sm:text-[16.5px]">
           Follow the simple three-phase framework that makes Anshu AI both powerful and secure.
         </p>
       </div>
 
-      {/* Workflow Showcase Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      {/* 4-Column Grid: 3 Steps + 1 Dashboard Widget */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         
-        {/* Steps Left Selector */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
-          {workflowSteps.map((step, idx) => {
-            const Icon = step.icon;
-            const isActive = activeWorkflowStep === idx;
-            return (
-              <button
-                key={idx}
-                onClick={() => setActiveWorkflowStep(idx)}
-                className={`text-left p-5 rounded-2xl border transition-all duration-300 flex items-start gap-4 cursor-pointer ${
-                  isActive
-                    ? "bg-white dark:bg-white/[0.03] border-violet-300 dark:border-violet-500/40 shadow-xl shadow-violet-600/5 scale-[1.02]"
-                    : "bg-transparent border-slate-200 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.01]"
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-colors duration-300 ${
-                  isActive ? "bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/30 text-violet-600 dark:text-violet-400" : "bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.05] text-slate-500"
-                }`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className={`font-display font-bold text-[15.5px] transition-colors duration-300 ${isActive ? "text-slate-900 dark:text-white font-extrabold" : "text-slate-600 dark:text-slate-300"}`}>
-                      {step.title}
-                    </h3>
-                    {isActive && (
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${step.color} transition-colors duration-300`}>
-                        {step.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className={`text-[13px] leading-relaxed transition-colors duration-300 ${isActive ? "text-slate-700 dark:text-slate-300" : "text-slate-500"}`}>
-                    {isActive ? step.description : step.description.substring(0, 80) + "..."}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {steps.map((step, idx) => (
+          <div 
+            key={idx}
+            className="bg-white dark:bg-slate-950/40 border border-slate-200 dark:border-white/[0.08] rounded-3xl p-6 flex flex-col justify-between min-h-[300px] shadow-sm dark:shadow-[0_4px_30px_rgba(0,0,0,0.2)] hover:border-violet-500/20 transition-all duration-300"
+          >
+            <div>
+              {/* Number Badge */}
+              <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500 font-extrabold text-[15px] mb-6">
+                {step.num}
+              </div>
 
-        {/* Steps Right UI Mockup display */}
-        <div className="lg:col-span-7 flex justify-center items-center relative">
-          <div className="absolute w-64 h-64 bg-violet-100 dark:bg-violet-600/10 rounded-full blur-[80px] pointer-events-none transition-colors duration-300"></div>
-          <div className="w-full max-w-[480px] bg-slate-100/60 dark:bg-slate-950/40 border border-slate-200 dark:border-white/[0.06] rounded-[2rem] p-5 shadow-2xl relative z-10 backdrop-blur-2xl transition-all duration-500">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-400 dark:bg-red-500/40 transition-colors duration-300"></span>
-              <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500/40 transition-colors duration-300"></span>
-              <span className="w-2.5 h-2.5 rounded-full bg-green-400 dark:bg-green-500/40 transition-colors duration-300"></span>
-              <span className="text-[11px] text-slate-500 font-mono ml-2">anshu-engine-logs.sh</span>
+              {/* Title with live indicator */}
+              <h3 className="font-display font-bold text-[18px] text-slate-900 dark:text-white mb-3 leading-snug flex items-center gap-2">
+                {step.title}
+                {step.isLive && (
+                  <span className="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">Live</span>
+                )}
+              </h3>
+
+              {/* Description */}
+              <p className="text-slate-600 dark:text-slate-400 text-[13.5px] leading-relaxed">
+                {step.description}
+              </p>
             </div>
-            <div className="transition-all duration-300">
-              {workflowSteps[activeWorkflowStep].uiMockup}
+          </div>
+        ))}
+
+        {/* Dashboard Actions Mockup Widget Card */}
+        <div className="bg-slate-950/90 border border-white/[0.08] rounded-3xl p-5 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.4)] min-h-[300px] relative overflow-hidden">
+          <div>
+            {/* Header Tabs */}
+            <div className="flex gap-4 border-b border-white/[0.06] pb-2 text-[11px] text-slate-400 font-semibold mb-3">
+              <span className="text-violet-400 font-extrabold border-b-2 border-violet-500 pb-2">Inbox</span>
+              <span className="hover:text-white transition-colors cursor-pointer">Calendar</span>
+              <span className="hover:text-white transition-colors cursor-pointer">Tasks</span>
+            </div>
+
+            {/* Pending actions counter and action */}
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-[12px] font-bold text-white">Pending Actions (3)</h4>
+              <button className="text-[10px] text-violet-400 font-bold hover:text-violet-300">Review All</button>
+            </div>
+
+            {/* Action List rows */}
+            <div className="space-y-3">
+              
+              {/* Row 1 */}
+              <div className="p-2.5 bg-slate-900 border border-white/[0.05] rounded-xl flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                    <Mail className="w-3.5 h-3.5 text-red-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h5 className="text-[11px] font-bold text-white truncate leading-none">Sarah: Review Q3 Report</h5>
+                    <p className="text-[9px] text-slate-500 mt-1">Email • 5m ago</p>
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button className="px-2 py-0.5 border border-white/10 hover:bg-white/5 text-[9px] font-bold text-slate-300 rounded">Dismiss</button>
+                  <button className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-[9px] font-bold text-white rounded">Approve</button>
+                </div>
+              </div>
+
+              {/* Row 2 */}
+              <div className="p-2.5 bg-slate-900 border border-white/[0.05] rounded-xl flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h5 className="text-[11px] font-bold text-white truncate leading-none">Team Standup Reminder</h5>
+                    <p className="text-[9px] text-slate-500 mt-1">Calendar • 10:30 AM</p>
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button className="px-2 py-0.5 border border-white/10 hover:bg-white/5 text-[9px] font-bold text-slate-300 rounded">Review</button>
+                  <button className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-[9px] font-bold text-white rounded">Approve</button>
+                </div>
+              </div>
+
+              {/* Row 3 */}
+              <div className="p-2.5 bg-slate-900 border border-white/[0.05] rounded-xl flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shrink-0">
+                    <span className="text-[10px] text-teal-400 font-bold font-mono">S</span>
+                  </div>
+                  <div className="min-w-0">
+                    <h5 className="text-[11px] font-bold text-white truncate leading-none">Prepare Client Update</h5>
+                    <p className="text-[9px] text-slate-500 mt-1">Slack • 10m ago</p>
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button className="px-2 py-0.5 border border-white/10 hover:bg-white/5 text-[9px] font-bold text-slate-300 rounded">Review</button>
+                  <button className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-[9px] font-bold text-white rounded">Approve</button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

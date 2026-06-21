@@ -18,6 +18,8 @@ import {
   Sun,
   Moon,
   Settings,
+  ChevronsRight,
+  ChevronsLeft,
 } from "lucide-react";
 import { api } from "@/lib/apiClient";
 
@@ -86,7 +88,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="absolute -right-3.5 top-9 w-7 h-7 bg-surface border border-border rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary shadow-sm z-50 transition-transform hover:scale-110 cursor-pointer"
         >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {isCollapsed ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
         </button>
 
         {/* App Logo */}
@@ -140,7 +142,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {/* Settings Menu Dropdown */}
           <AnimatePresence>
           {isProfileMenuOpen && (
-            <div className="absolute bottom-[calc(100%+12px)] left-0 w-full bg-surface border border-border/80 rounded-2xl shadow-xl flex flex-col p-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="absolute bottom-[calc(100%+12px)] left-0 w-52 bg-surface border border-border/80 rounded-2xl shadow-xl flex flex-col p-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
               <Link 
                 href="/settings" 
                 onClick={() => setIsProfileMenuOpen(false)}
@@ -177,7 +179,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             className={`flex items-center transition-all hover:bg-surface-raised rounded-xl cursor-pointer group w-full ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-2 py-2'} ${isProfileMenuOpen ? 'bg-surface-raised' : ''}`}
           >
             <div className="w-10 h-10 rounded-full bg-surface-raised flex items-center justify-center font-display font-bold text-text-primary shrink-0 border border-border/60 shadow-sm relative overflow-hidden">
-              <span className="relative z-10">{user?.avatar?.substring(0, 2) || "A"}</span>
+              {user?.avatar && (user.avatar.startsWith("http://") || user.avatar.startsWith("https://")) ? (
+                <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover relative z-10" />
+              ) : (
+                <span className="relative z-10">{user?.avatar?.substring(0, 2) || "A"}</span>
+              )}
               <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent"></div>
               
               {/* User Profile Tooltip for Collapsed State */}
@@ -220,7 +226,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className={`flex items-center justify-center w-8 h-8 rounded-full bg-surface-raised border border-border/60 shadow-sm relative overflow-hidden transition-all duration-200 cursor-pointer shrink-0 ${isProfileMenuOpen ? 'ring-2 ring-accent' : ''}`}
             >
-              <span className="relative z-10 text-[11px] font-bold text-text-primary">{user?.avatar?.substring(0, 2) || "A"}</span>
+              {user?.avatar && (user.avatar.startsWith("http://") || user.avatar.startsWith("https://")) ? (
+                <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover relative z-10" />
+              ) : (
+                <span className="relative z-10 text-[11px] font-bold text-text-primary">{user?.avatar?.substring(0, 2) || "A"}</span>
+              )}
               <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent"></div>
             </button>
 

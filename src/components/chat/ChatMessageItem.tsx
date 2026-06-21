@@ -1,4 +1,4 @@
-import { Bot, User, Loader2, Check } from "lucide-react";
+import { Bot, Loader2, Check } from "lucide-react";
 import type { ChatMessage } from "@/lib/types";
 import { CalendarAction } from "./actions/CalendarAction";
 import { CalendarUpdateAction } from "./actions/CalendarUpdateAction";
@@ -27,6 +27,7 @@ interface ChatMessageItemProps {
   onCancelAction: (messageId: string, actionId: string) => void;
   onExecuteAction: (messageId: string, actionId: string) => void;
   onSendFollowUp?: (question: string) => void;
+  user: { name: string; avatar: string } | null;
 }
 
 // Check if action type is a rich view (renders full-width, no confirm/cancel buttons)
@@ -58,6 +59,12 @@ function getActionLabel(type: string): string {
   }
 }
 
+function formatMessageTime(iso: string): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
 export function ChatMessageItem({
   message: m,
   editingActionId,
@@ -70,30 +77,54 @@ export function ChatMessageItem({
   onCancelAction,
   onExecuteAction,
   onSendFollowUp,
+  user,
 }: ChatMessageItemProps) {
+  const isUser = m.role === "user";
+  const timeStr = formatMessageTime(m.createdAt);
+
   return (
     <div className="flex flex-col">
       {/* Text bubble */}
-      <div
-        className={`flex items-start gap-3.5 ${m.role === "user" ? "justify-end" : "justify-start"} rise-in`}
-      >
-        {m.role === "assistant" && (
-          <div className="w-8 h-8 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 shadow-sm">
-            <Bot className="w-4 h-4 text-accent" />
+      <div className={`flex items-start gap-3.5 ${isUser ? "justify-end" : "justify-start"} rise-in`}>
+        {!isUser && (
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#7e3af2] to-fuchsia-500 flex items-center justify-center text-white shrink-0 shadow-md">
+            <Bot className="w-4 h-4" />
           </div>
         )}
-        <div
-          className={`max-w-[90%] sm:max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 text-[10.5px] md:text-[14px] leading-relaxed shadow-sm ${
-            m.role === "user"
-              ? "user-bubble bg-gradient-to-tr from-[#7c3aed] to-[#9061f9] text-white font-semibold rounded-tr-none"
-              : "bg-surface border border-border text-text-primary rounded-tl-none"
-          }`}
-        >
-          {m.content}
+        
+        <div className="flex flex-col max-w-[85%] md:max-w-[70%]">
+          <div
+            className={`rounded-2xl px-4.5 py-3 text-[13.5px] leading-relaxed shadow-sm font-sans ${
+              isUser
+                ? "bg-[#4f22d6] text-white font-semibold rounded-tr-none"
+                : "bg-slate-100 dark:bg-[#0c0827]/40 border border-slate-200 dark:border-white/[0.05] text-slate-800 dark:text-slate-100 rounded-tl-none"
+            }`}
+          >
+            {m.content}
+          </div>
+          
+          {isUser ? (
+            <div className="flex items-center gap-1 justify-end text-[11px] text-slate-555 dark:text-slate-500 mt-1.5 font-bold mr-1">
+              <span>{timeStr}</span>
+              <svg className="w-3.5 h-3.5 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 12l5.25 5L12 8" />
+                <path d="M8 12l5.25 5L22 8" />
+              </svg>
+            </div>
+          ) : (
+            <div className="text-[11px] text-slate-555 dark:text-slate-500 mt-1.5 font-bold ml-1">
+              {timeStr}
+            </div>
+          )}
         </div>
-        {m.role === "user" && (
-          <div className="w-8 h-8 rounded-xl bg-surface border border-border flex items-center justify-center shrink-0 shadow-sm">
-            <User className="w-4 h-4 text-text-secondary" />
+
+        {isUser && (
+          <div className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0c0827] flex items-center justify-center shrink-0 overflow-hidden text-slate-600 dark:text-slate-300 font-bold select-none shadow-md">
+            {user?.avatar && (user.avatar.startsWith("http://") || user.avatar.startsWith("https://")) ? (
+              <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-[12px] uppercase">{user?.avatar?.substring(0, 2) || "A"}</span>
+            )}
           </div>
         )}
       </div>
