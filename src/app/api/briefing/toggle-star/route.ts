@@ -2,17 +2,19 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { updateItemPriority } from "@/lib/db/feed";
 import { toggleGmailStar } from "@/lib/syncService";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function POST(req: Request) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   try {
     const { itemId, starred } = await req.json();
     if (!itemId || starred === undefined) {
-      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
+      return ApiResponse.error("Missing required parameters", 400);
     }
 
     const priority = starred ? "high" : "low";
@@ -28,9 +30,9 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true });
+    return ApiResponse.success({ ok: true });
   } catch (err) {
     console.error("Error in toggle-star API route:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return ApiResponse.error("Internal server error", 500);
   }
-}
+});

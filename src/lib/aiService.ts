@@ -11,7 +11,6 @@ export type { Provider } from "./ai/config";
 
 export { callAI, callAnthropic, callOpenAICompatible } from "./ai/core";
 
-export { mockChatAnswer, mockSummarize } from "./ai/mock";
 
 export { computeCounts, generateBriefing } from "./ai/briefing";
 export type { BriefingResult } from "./ai/briefing";

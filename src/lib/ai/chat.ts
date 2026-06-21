@@ -1,28 +1,6 @@
 import type { FeedItem, ChatMessage } from "../types";
-import { PROVIDER } from "./config";
 import { callAI } from "./core";
-import { mockChatAnswer } from "./mock";
-
 export async function enhanceText(text: string, context: string): Promise<string> {
-  const getMockPolished = async () => {
-    await new Promise((r) => setTimeout(r, 800));
-    const fakePolished = text
-      .replace(/Hi,?\s*(?:\w+,?)?/i, "Dear Colleague,")
-      .replace(/Thanks!?/i, "Best regards,")
-      .replace(/Just a reminder that you will connect with me/i, "This email serves to confirm our scheduled meeting")
-      .replace(/Please let me know if you need to adjust the time\.?/i, "Kindly advise if any rescheduling is necessary.")
-      .replace(/Let me know your thoughts\.?/i, "I look forward to your feedback.");
-      
-    if (fakePolished !== text) {
-      return fakePolished;
-    }
-    return `[Polished] ${text}`;
-  };
-
-  if (PROVIDER === "mock") {
-    return getMockPolished();
-  }
-
   const prompt = `You are an expert editor. Please polish the following ${context}. Make it professional, clear, and concise. Do NOT add any conversational filler or greetings that weren't there. ONLY return the polished text.
 
 Original text:
@@ -35,23 +13,21 @@ ${text}`;
       800
     );
   } catch (err) {
-    console.warn("[aiService] enhanceText failed, falling back to mock:", err);
-    return getMockPolished();
+    console.warn("[aiService] enhanceText failed:", err);
+    return text;
   }
 }
 
 export async function generateChatTitle(question: string): Promise<string> {
-  if (PROVIDER === "mock") {
-    return question.length > 25 ? question.substring(0, 25) + "..." : question;
-  }
-
   try {
     const title = await callAI(
       "You are a helpful assistant. Generate a concise 3 to 5 word summary title for the user's message. Output ONLY the title text, nothing else, no quotes.",
       question,
       50
     );
-    return title.trim().replace(/^"|"$/g, '');
+    const cleanTitle = title.trim().replace(/^"|"$/g, '');
+    console.log(`[chat/title] Generated title for "${question}": ${cleanTitle}`);
+    return cleanTitle;
   } catch (err) {
     console.warn("[aiService] generateChatTitle failed, using fallback:", err);
     return question.length > 25 ? question.substring(0, 25) + "..." : question;
@@ -65,18 +41,17 @@ export async function answerChatQuestion(
   timeZone?: string,
   localTime?: string
 ): Promise<string> {
-  if (PROVIDER === "mock") {
-    return mockChatAnswer(question, items);
-  }
-
   const itemsText = items
     .slice(0, 30)
-    .map((i) => `- (${i.source}) [${i.priority}] ${i.title}: ${i.snippet} — from ${i.from}`)
+    .map((i) => {
+      const timeStr = new Date(i.receivedAt).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      return `- (${i.source}) [${i.priority}] ${i.title}: ${i.snippet} — from ${i.from} (Time: ${timeStr})`;
+    })
     .join("\n");
 
   const recentHistory = history.slice(-10);
   const historyText = recentHistory
-    .map((m) => `${m.role === "user" ? "User" : "Aria"}: ${m.content}`)
+    .map((m) => `${m.role === "user" ? "User" : "Anshu"}: ${m.content}`)
     .join("\n");
 
   const userPrompt = [
@@ -102,7 +77,7 @@ export async function answerChatQuestion(
     : `Today is ${fullDateStr} (UTC). Calculate exact absolute ISO datetime strings relative to this current time.\n\nREFERENCE CALENDAR (Next 7 Days):\n- ${next7Days}`;
 
   const systemPrompt = 
-    `You are Aria, a personal AI assistant. The user has connected their apps and you have access to their recent data. Answer questions and respond to the user conversationally. Be concise and helpful. Use ONLY the connected data provided to answer factual questions about their data. If the data doesn't contain the answer, say so honestly.\n\n` +
+    `You are Anshu, a personal AI assistant. The user has connected their apps and you have access to their recent data. Answer questions and respond to the user conversationally. Be concise and helpful. Use ONLY the connected data provided to answer factual questions about their data. If the data doesn't contain the answer, say so honestly.\n\n` +
     `Current Time Context: ${timeContext}\n\n` +
     `ACTIONS ASSISTANT:\n` +
     `You can perform three actions on the user's behalf if they ask you to:\n` +
@@ -246,11 +221,10 @@ export async function answerChatQuestion(
     return await callAI(
       systemPrompt,
       userPrompt,
-      1000
+      2000
     );
   } catch (err) {
-    console.warn("[aiService] answerChatQuestion failed, falling back to mock:", err);
-    const mockAns = mockChatAnswer(question, items);
-    return `*⚠️ AI Rate Limited - Auto-Mocked:*\n\n${mockAns}`;
+    console.warn("[aiService] answerChatQuestion failed:", err);
+    return "I'm sorry, I'm having trouble connecting to the AI provider right now. Please check your API keys or try again later.";
   }
 }

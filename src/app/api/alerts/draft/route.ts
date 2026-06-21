@@ -2,33 +2,35 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { draftAlertResponse } from "@/lib/ai/alerts";
 import { z } from "zod";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
 const schema = z.object({
   item: z.any(),
 });
 
-export async function POST(req: Request) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ApiResponse.error("Unauthorized", 401);
   }
 
-  try {
+    try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+      return ApiResponse.error("Invalid request", 400);
     }
 
     const { item } = parsed.data;
     if (!item || !item.title) {
-      return NextResponse.json({ error: "Invalid item" }, { status: 400 });
+      return ApiResponse.error("Invalid item", 400);
     }
 
     const draft = await draftAlertResponse(item);
-    return NextResponse.json({ draft });
+    return ApiResponse.success({ draft });
   } catch (err) {
     console.error("Alert draft error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return ApiResponse.error("Internal server error", 500);
   }
-}
+});

@@ -1,22 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getChatSessions, createChatSession } from "@/lib/db/messages";
 import { v4 as uuid } from "uuid";
 import type { ChatSession } from "@/lib/types";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function GET(req: NextRequest) {
+export const GET = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
   const sessions = await getChatSessions(session.userId);
-  return NextResponse.json({ sessions });
-}
+  return ApiResponse.success({ sessions });
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   const { title } = await req.json().catch(() => ({ title: "New Chat" }));
@@ -31,5 +33,5 @@ export async function POST(req: NextRequest) {
 
   await createChatSession(newSession);
 
-  return NextResponse.json(newSession);
-}
+  return ApiResponse.success(newSession);
+});

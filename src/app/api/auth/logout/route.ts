@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { clearSessionCookie } from "@/lib/auth";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function POST() {
+export const POST = withEncryption(async () => {
   await clearSessionCookie();
-  return NextResponse.json({ ok: true });
-}
+  return ApiResponse.success({ ok: true });
+});

@@ -133,10 +133,14 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, assistantMsg]);
 
       // Refresh sessions to get updated title if it was the first message
-      if (messages.length === 0) {
-        const sessionsRes = await api.getChatSessions();
-        setSessions(sessionsRes.sessions);
-      }
+      setMessages((prev) => {
+        if (prev.length <= 2) {
+          api.getChatSessions().then((sessionsRes) => {
+            setSessions(sessionsRes.sessions);
+          });
+        }
+        return prev;
+      });
     } finally {
       setSending(false);
     }

@@ -26,15 +26,28 @@ export async function clearSessionCookie() {
 export async function getSession(): Promise<SessionPayload | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
+  console.log("[AUTH] getSession called, cookie present:", !!token, token ? `(${token.substring(0, 20)}...)` : "");
   if (!token) return null;
   
   try {
-    const decodedToken = await adminAuth.verifySessionCookie(token, true);
+    const decodedToken = await adminAuth.verifySessionCookie(token, false);
     return {
       userId: decodedToken.uid,
       phoneNumber: decodedToken.phone_number || "",
     };
   } catch (err) {
-    return null;
+    try {
+      // Fallback: If it's an ID token instead of a session cookie, try verifying it as an ID token
+      const decodedIdToken = await adminAuth.verifyIdToken(token);
+      return {
+        userId: decodedIdToken.uid,
+        phoneNumber: decodedIdToken.phone_number || "",
+      };
+    } catch (err2) {
+      console.error("verifySessionCookie and verifyIdToken both failed:", err2);
+      // Clear the corrupted/expired cookie so the user isn't stuck in a redirect loop
+      store.delete(SESSION_COOKIE);
+      return null;
+    }
   }
 }

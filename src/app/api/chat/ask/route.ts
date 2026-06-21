@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { getFeedForUser } from "@/lib/db/feed";
 import { answerChatQuestion } from "@/lib/aiService";
-import { getMessageHistory, insertMessage, clearHistory } from "@/lib/db/messages";
+import { getMessageHistory, insertMessage } from "@/lib/db/messages";
 import type { ChatAction, ChatMessage } from "@/lib/types";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
 const schema = z.object({
   question: z.string().min(1),
@@ -15,16 +16,16 @@ const schema = z.object({
   localTime: z.string().optional(),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Question is required" }, { status: 400 });
+    return ApiResponse.error("Question is required", 400);
   }
 
   const history = await getMessageHistory(session.userId, parsed.data.chatId);
@@ -95,6 +96,18 @@ export async function POST(req: NextRequest) {
     { tag: "whatsapp_chat_view", type: "whatsapp_chat_view" },
     { tag: "slack_channel_view", type: "slack_channel_view" }
   ] as const;
+
+
+
+  // Pre-process answer to close any unclosed tags
+  for (const { tag } of actionTags) {
+    const openIndex = answerToProcess.indexOf(`<${tag}>`);
+    if (openIndex !== -1 && answerToProcess.indexOf(`</${tag}>`, openIndex) === -1) {
+      // It has an opening tag but no closing tag.
+      // Remove any trailing broken tags like `</a` or `</` and add the proper closing tag
+      answerToProcess = answerToProcess.replace(/<\/[a-zA-Z_]*$/, "").trim() + `</${tag}>`;
+    }
+  }
 
   for (const { tag, type } of actionTags) {
     const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "g");
@@ -172,20 +185,20 @@ export async function POST(req: NextRequest) {
     await updateSessionTitle(parsed.data.chatId, title);
   }
 
-  return NextResponse.json({ answer: finalAnswer, messageId: assistantMessage.id, actions: actionsData });
-}
+  return ApiResponse.success({ answer: finalAnswer, messageId: assistantMessage.id, actions: actionsData });
+});
 
-export async function GET(req: NextRequest) {
+export const GET = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
   const { searchParams } = new URL(req.url);
   const chatId = searchParams.get("chatId");
   if (!chatId) {
-    return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
+    return ApiResponse.error("Missing chatId", 400);
   }
 
   const history = await getMessageHistory(session.userId, chatId);
-  return NextResponse.json({ history });
-}
+  return ApiResponse.success({ history });
+});

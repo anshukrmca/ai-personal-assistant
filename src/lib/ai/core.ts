@@ -85,7 +85,7 @@ export async function callAI(
       maxTokens,
       {
         "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "http://localhost:3000",
-        "X-Title": process.env.OPENROUTER_APP_NAME || "Aria Personal Assistant",
+        "X-Title": process.env.OPENROUTER_APP_NAME || "Anshu Personal Assistant",
       }
     );
   }

@@ -1,22 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
 import { deleteChatSession } from "@/lib/db/messages";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function DELETE(
-  req: NextRequest,
+export const DELETE = withEncryption(async (
+  req: Request,
   { params }: { params: Promise<{ chatId: string }> }
-) {
+) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   const { chatId } = await params;
   if (!chatId) {
-    return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
+    return ApiResponse.error("Missing chatId", 400);
   }
 
   await deleteChatSession(session.userId, chatId);
 
-  return NextResponse.json({ success: true });
-}
+  return ApiResponse.success({ success: true });
+});

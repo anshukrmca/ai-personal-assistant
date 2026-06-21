@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { disconnectIntegration, getIntegrationsForUser } from "@/lib/db/integrations";
-import { seedFeedForUser, platformToSource } from "@/lib/db/feed";
-import type { ItemSource } from "@/lib/types";
+import { disconnectIntegration } from "@/lib/db/integrations";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
 const schema = z.object({
   platform: z.enum([
@@ -18,26 +18,19 @@ const schema = z.object({
   ]),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
+    return ApiResponse.error("Invalid platform", 400);
   }
 
   await disconnectIntegration(session.userId, parsed.data.platform);
 
-  const allIntegrations = await getIntegrationsForUser(session.userId);
-  const connectedSources = allIntegrations
-    .filter((i) => i.status === "connected")
-    .map((i) => platformToSource(i.platform)) as ItemSource[];
-
-  await seedFeedForUser(session.userId, connectedSources);
-
-  return NextResponse.json({ ok: true });
-}
+  return ApiResponse.success({ ok: true });
+});

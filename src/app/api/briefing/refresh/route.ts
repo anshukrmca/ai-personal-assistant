@@ -4,11 +4,13 @@ import { getFeedForUser } from "@/lib/db/feed";
 import { saveBriefing } from "@/lib/db/briefings";
 import { generateBriefing } from "@/lib/aiService";
 import { syncGoogleData } from "@/lib/syncService";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function POST() {
+export const POST = withEncryption(async () => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   // Pull live updates on refresh
@@ -22,5 +24,5 @@ export async function POST() {
   const result = await generateBriefing(items);
   const briefing = await saveBriefing(session.userId, result);
 
-  return NextResponse.json({ briefing, items });
-}
+  return ApiResponse.success({ briefing, items });
+});

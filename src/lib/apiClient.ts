@@ -1,14 +1,72 @@
+import { CryptoUtil } from "./crypto";
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  let finalBody = options?.body;
+
+  // 1. Encrypt outgoing body if it exists
+  if (finalBody && typeof finalBody === 'string') {
+    try {
+      const key = typeof window !== "undefined" ? sessionStorage.getItem('ai_assistant_enc_key') : null;
+      const iv = typeof window !== "undefined" ? sessionStorage.getItem('ai_assistant_enc_iv') : null;
+      if (key && iv) {
+        const encrypted = CryptoUtil.encrypt(finalBody, key, iv);
+        if (encrypted) {
+          finalBody = JSON.stringify({ payload: encrypted });
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to encrypt outgoing request body', e);
+    }
+  }
+
   const res = await fetch(url, {
     ...options,
+    body: finalBody,
     headers: { "Content-Type": "application/json", ...options?.headers },
     credentials: "include",
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error || "Request failed");
+  
+  const rawData = await res.json().catch(() => ({}));
+  
+  if (!res.ok || rawData.success === false) {
+    if (res.status === 401 && typeof window !== "undefined" && !url.includes("/api/auth/")) {
+      // Keep theme preference if it exists, clear everything else
+      const theme = localStorage.getItem("theme");
+      localStorage.clear();
+      sessionStorage.clear();
+      if (theme) localStorage.setItem("theme", theme);
+      
+      // Clear cookies
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      window.location.href = "/login";
+    }
+    throw new Error(rawData.message || rawData.error || "Request failed");
   }
-  return data as T;
+
+  // Handle ApiResponse envelope
+  const isApiResponse = rawData && typeof rawData.success === 'boolean';
+  let responseData = isApiResponse ? rawData.data : rawData;
+
+  // 2. Decrypt incoming data if it's a ciphertext string
+  if (typeof responseData === 'string' && responseData.includes(':')) {
+    try {
+      const key = typeof window !== "undefined" ? sessionStorage.getItem('ai_assistant_enc_key') : null;
+      const iv = typeof window !== "undefined" ? sessionStorage.getItem('ai_assistant_enc_iv') : null;
+      if (key && iv) {
+        const decrypted = CryptoUtil.decrypt(responseData, key, iv);
+        if (decrypted !== null) {
+          responseData = decrypted;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to decrypt incoming response data', e);
+    }
+  }
+
+  return responseData as T;
 }
 
 export const api = {
@@ -25,7 +83,7 @@ export const api = {
     ),
 
   verifyFirebaseToken: (idToken: string) =>
-    request<{ ok: boolean; isNewUser: boolean; user: any }>(
+    request<{ ok: boolean; isNewUser: boolean; user: any; encryptionKey?: string; encryptionIv?: string }>(
       "/api/auth/session",
       { method: "POST", body: JSON.stringify({ idToken }) }
     ),

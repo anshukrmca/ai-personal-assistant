@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getUserById, updateUserProfile } from "@/lib/db/users";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function GET() {
+export const GET = withEncryption(async () => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ user: null }, { status: 200 });
+    return ApiResponse.success({ user: null });
   }
 
   const user = await getUserById(session.userId);
   if (!user) {
-    return NextResponse.json({ user: null }, { status: 200 });
+    return ApiResponse.success({ user: null });
   }
 
-  return NextResponse.json({
+  return ApiResponse.success({
     user: {
       userId: user.userId,
       phoneNumber: user.phoneNumber,
@@ -22,12 +24,12 @@ export async function GET() {
       email: user.email,
     },
   });
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ApiResponse.error("Unauthorized", 401);
   }
 
   try {
@@ -41,10 +43,10 @@ export async function POST(req: Request) {
 
     const updatedUser = await updateUserProfile(session.userId, fieldsToUpdate);
     if (!updatedUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return ApiResponse.error("User not found", 404);
     }
 
-    return NextResponse.json({
+    return ApiResponse.success({
       user: {
         userId: updatedUser.userId,
         phoneNumber: updatedUser.phoneNumber,
@@ -55,6 +57,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Failed to update profile:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return ApiResponse.error("Internal Server Error", 500);
   }
-}
+});

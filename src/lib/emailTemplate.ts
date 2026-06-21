@@ -33,7 +33,7 @@ export function buildEmailHtml(to: string, subject: string, bodyText: string): s
               <tr><td style="border-top:1px solid #e5e7eb;padding-top:20px;">\r
                 <p style="margin:0 0 4px 0;color:#6b7280;font-size:13px;">Best regards,</p>\r
                 <p style="margin:0 0 2px 0;color:#1f2937;font-size:14px;font-weight:600;">Anshu</p>\r
-                <p style="margin:0;color:#9ca3af;font-size:12px;">Sent via Aria Personal Assistant</p>\r
+                <p style="margin:0;color:#9ca3af;font-size:12px;">Sent via Anshu Personal Assistant</p>\r
               </td></tr>\r
             </table>\r
           </td>\r
@@ -42,7 +42,7 @@ export function buildEmailHtml(to: string, subject: string, bodyText: string): s
         <tr>\r
           <td style="background-color:#f9fafb;padding:16px 32px;border-top:1px solid #f3f4f6;">\r
             <p style="margin:0;color:#9ca3af;font-size:11px;text-align:center;">\r
-              This email was composed by Aria AI — your personal productivity assistant.\r
+              This email was composed by Anshu AI - your personal productivity assistant.\r
             </p>\r
           </td>\r
         </tr>\r

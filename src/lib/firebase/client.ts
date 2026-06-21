@@ -14,6 +14,10 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
 const linkedinProvider = new OAuthProvider('linkedin.com');
 
 export { app, auth, googleProvider, linkedinProvider };

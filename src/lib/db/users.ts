@@ -76,3 +76,15 @@ export async function updateUserProfile(
   );
   return result ? (result as unknown as User) : null;
 }
+
+export async function updateSessionKeys(
+  userId: string,
+  key: string,
+  iv: string
+): Promise<void> {
+  const db = await getDb();
+  await db.collection(COLLECTION).updateOne(
+    { userId },
+    { $set: { sessionKeys: { key, iv } } }
+  );
+}

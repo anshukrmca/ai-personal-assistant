@@ -1,8 +1,6 @@
 import type { FeedItem } from "../types";
 import { PROVIDER } from "./config";
 import { callAI } from "./core";
-import { mockSummarize } from "./mock";
-
 export interface BriefingResult {
   summary: string;
   meetingsCount: number;
@@ -20,11 +18,6 @@ export function computeCounts(items: FeedItem[]): Omit<BriefingResult, "summary"
 
 export async function generateBriefing(items: FeedItem[]): Promise<BriefingResult> {
   const counts = computeCounts(items);
-
-  if (PROVIDER === "mock") {
-    return mockSummarize(items);
-  }
-
   const itemsText = items
     .slice(0, 20)
     .map((i) => `- [${i.priority.toUpperCase()}] (${i.source}) ${i.title}: ${i.snippet}`)
@@ -36,9 +29,9 @@ export async function generateBriefing(items: FeedItem[]): Promise<BriefingResul
       `Write a daily briefing summary based on these synced items from the user's apps. Be direct and conversational. Mention the single most urgent item by name.\n\nItems:\n${itemsText}`,
       180
     );
-    return { ...counts, summary: summary || mockSummarize(items).summary };
+    return { ...counts, summary: summary || "You have upcoming items but no summary could be generated." };
   } catch (err) {
     console.error("[aiService] generateBriefing failed:", err);
-    return mockSummarize(items);
+    return { ...counts, summary: "Could not generate AI briefing due to an error." };
   }
 }

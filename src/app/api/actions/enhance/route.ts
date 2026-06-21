@@ -4,6 +4,8 @@ import { findMessageById, updateMessageActions } from "@/lib/db/messages";
 import { ChatMessage } from "@/lib/types";
 import { enhanceText } from "@/lib/aiService";
 import { z } from "zod";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
 const schema = z.object({
   messageId: z.string().min(1),
@@ -12,34 +14,34 @@ const schema = z.object({
 
 const COLLECTION = "chatMessages";
 
-export async function POST(req: Request) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ApiResponse.error("Unauthorized", 401);
   }
 
-  try {
+    try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+      return ApiResponse.error("Invalid request payload", 400);
     }
 
     const { messageId, actionId } = parsed.data;
     const message = await findMessageById(messageId);
 
     if (!message || message.userId !== session.userId) {
-      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+      return ApiResponse.error("Message not found", 404);
     }
 
     let targetAction = message.actions?.find((a) => a.id === actionId) || message.action;
 
     if (!targetAction) {
-      return NextResponse.json({ error: "No action associated with this message" }, { status: 400 });
+      return ApiResponse.error("No action associated with this message", 400);
     }
 
     if (targetAction.status !== "pending") {
-      return NextResponse.json({ error: "Action is no longer pending" }, { status: 400 });
+      return ApiResponse.error("Action is no longer pending", 400);
     }
 
     const { type, payload } = targetAction as { type: string, payload: any };
@@ -62,9 +64,9 @@ export async function POST(req: Request) {
       }
     );
 
-    return NextResponse.json({ ok: true, payload: newPayload });
+    return ApiResponse.success({ ok: true, payload: newPayload });
   } catch (err) {
     console.error("Enhance action error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return ApiResponse.error("Internal server error", 500);
   }
-}
+});

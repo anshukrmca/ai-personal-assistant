@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { connectIntegration, getIntegrationsForUser } from "@/lib/db/integrations";
-import { seedFeedForUser, platformToSource } from "@/lib/db/feed";
 import type { ItemSource } from "@/lib/types";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
 const schema = z.object({
   platform: z.enum([
@@ -18,16 +19,16 @@ const schema = z.object({
   ]),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
+    return ApiResponse.error("Invalid platform", 400);
   }
 
   const platform = parsed.data.platform;
@@ -39,10 +40,7 @@ export async function POST(req: NextRequest) {
     const redirectUri = process.env.GOOGLE_REDIRECT_URI;
 
     if (!clientId || !clientSecret || !redirectUri) {
-      return NextResponse.json(
-        { error: "Google OAuth credentials are not fully configured in your .env.local file" },
-        { status: 500 }
-      );
+      return ApiResponse.error("Google OAuth credentials are not fully configured in your .env.local file", 500);
     }
 
     const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -65,18 +63,11 @@ export async function POST(req: NextRequest) {
     const qs = new URLSearchParams(options).toString();
     const redirectUrl = `${rootUrl}?${qs}`;
 
-    return NextResponse.json({ ok: true, redirectUrl });
+    return ApiResponse.success({ ok: true, redirectUrl });
   }
 
   // Other platforms fall back to instant simulation connection
   const integration = await connectIntegration(session.userId, platform);
 
-  const allIntegrations = await getIntegrationsForUser(session.userId);
-  const connectedSources = allIntegrations
-    .filter((i) => i.status === "connected")
-    .map((i) => platformToSource(i.platform)) as ItemSource[];
-
-  await seedFeedForUser(session.userId, connectedSources);
-
-  return NextResponse.json({ ok: true, integration });
-}
+  return ApiResponse.success({ ok: true, integration });
+});

@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getIntegrationsForUser } from "@/lib/db/integrations";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function GET() {
+export const GET = withEncryption(async () => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   const integrations = await getIntegrationsForUser(session.userId);
-  return NextResponse.json({ integrations });
-}
+  return ApiResponse.success({ integrations });
+});

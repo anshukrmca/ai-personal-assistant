@@ -17,6 +17,10 @@ export interface User {
   bio: string | null;
   createdAt: string;
   lastLogin: string;
+  sessionKeys?: {
+    key: string;
+    iv: string;
+  };
 }
 
 export interface OtpRecord {

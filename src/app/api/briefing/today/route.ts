@@ -4,11 +4,13 @@ import { getFeedForUser } from "@/lib/db/feed";
 import { getTodaysBriefing, saveBriefing } from "@/lib/db/briefings";
 import { generateBriefing } from "@/lib/aiService";
 import { syncGoogleData } from "@/lib/syncService";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
-export async function GET() {
+export const GET = withEncryption(async () => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return ApiResponse.error("Not authenticated", 401);
   }
 
   // Try to pull live Gmail and Google Calendar updates in the background (non-blocking)
@@ -24,5 +26,5 @@ export async function GET() {
     briefing = await saveBriefing(session.userId, result);
   }
 
-  return NextResponse.json({ briefing, items });
-}
+  return ApiResponse.success({ briefing, items });
+});

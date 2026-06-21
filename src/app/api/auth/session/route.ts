@@ -1,24 +1,20 @@
 import { NextResponse } from "next/server";
-import { createAndSetSessionCookie } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebase/admin";
-import { createUser, getUserById } from "@/lib/db/users";
+import { createUser, getUserById, updateSessionKeys } from "@/lib/db/users";
 import { getIntegrationsForUser } from "@/lib/db/integrations";
 import type { AuthProvider } from "@/lib/types";
+import { CryptoUtil } from "@/lib/crypto";
+import { ApiResponse } from "@/lib/apiResponse";
+
+const SESSION_EXPIRY_MS = 60 * 60 * 24 * 7 * 1000; // 7 days
+const SESSION_EXPIRY_SECONDS = 60 * 60 * 24 * 7;
 
 export async function POST(req: Request) {
   try {
     const { idToken } = await req.json();
     if (!idToken) {
-      return NextResponse.json({ error: "No ID token provided" }, { status: 400 });
-    }
-
-    // DEBUG: check environment variables
-    const pk = process.env.FIREBASE_PRIVATE_KEY;
-    const em = process.env.FIREBASE_CLIENT_EMAIL;
-    const pid = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    
-    if (!pk || !em || !pid) {
-      return NextResponse.json({ error: "Firebase Admin is missing environment variables", details: { hasPk: !!pk, hasEm: !!em, hasPid: !!pid, pkStart: pk?.substring(0, 10) } }, { status: 500 });
+      return ApiResponse.error("No ID token provided", 400);
     }
 
     // Verify token to get user info
@@ -36,7 +32,6 @@ export async function POST(req: Request) {
     let isNewUser = false;
 
     if (!user) {
-      // Create user mapping uid to internal userId
       user = await createUser(provider, {
         userId: uid,
         phoneNumber: phone_number || "",
@@ -45,16 +40,33 @@ export async function POST(req: Request) {
         avatar: picture || "🙂"
       });
       isNewUser = true;
-      // Initialize integrations
       await getIntegrationsForUser(uid);
+    } else {
+      import("@/lib/db/users").then(m => m.touchLastLogin(uid));
     }
 
-    // Set secure HTTP-only cookie
-    await createAndSetSessionCookie(idToken);
+    // Generate Dynamic Keys for E2EE Session
+    const encryptionKey = CryptoUtil.generateDynamicKey();
+    const encryptionIv = CryptoUtil.generateDynamicIv();
+    await updateSessionKeys(uid, encryptionKey, encryptionIv);
 
-    return NextResponse.json({ ok: true, isNewUser, user });
+    // Create Firebase session cookie
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: SESSION_EXPIRY_MS });
+
+    // Set cookie using next/headers (most reliable method in App Router)
+    const cookieStore = await cookies();
+    cookieStore.set("ai_assistant_session", sessionCookie, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_EXPIRY_SECONDS,
+    });
+
+    console.log("[SESSION] Cookie set successfully using next/headers for user:", uid);
+    return ApiResponse.success({ ok: true, isNewUser, user, encryptionKey, encryptionIv });
   } catch (error: any) {
-    console.error("Session creation failed", error);
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    console.error("Session creation failed:", error);
+    return ApiResponse.error("Invalid token", 401);
   }
 }

@@ -4,6 +4,8 @@ import { findMessageById, updateMessageActions } from "@/lib/db/messages";
 import { ChatMessage } from "@/lib/types";
 import { sendGmailEmail, createGmailDraft, createCalendarEvent } from "@/lib/syncService";
 import { z } from "zod";
+import { withEncryption } from "@/lib/apiWrapper";
+import { ApiResponse } from "@/lib/apiResponse";
 
 const schema = z.object({
   messageId: z.string().min(1),
@@ -13,34 +15,34 @@ const schema = z.object({
 
 const COLLECTION = "chatMessages";
 
-export async function POST(req: Request) {
+export const POST = withEncryption(async (req: Request) => {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ApiResponse.error("Unauthorized", 401);
   }
 
-  try {
+    try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+      return ApiResponse.error("Invalid request payload", 400);
     }
 
     const { messageId, actionId, payloadOverride } = parsed.data;
     const message = await findMessageById(messageId);
 
     if (!message || message.userId !== session.userId) {
-      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+      return ApiResponse.error("Message not found", 404);
     }
 
     let targetAction = message.actions?.find((a) => a.id === actionId) || message.action;
 
     if (!targetAction) {
-      return NextResponse.json({ error: "No action associated with this message" }, { status: 400 });
+      return ApiResponse.error("No action associated with this message", 400);
     }
 
     if (targetAction.status !== "pending") {
-      return NextResponse.json({ error: "Action is no longer pending" }, { status: 400 });
+      return ApiResponse.error("Action is no longer pending", 400);
     }
 
     let success = false;
@@ -133,7 +135,7 @@ export async function POST(req: Request) {
           return { ...m, action: { ...m.action!, status: "completed" as const } };
         }
       );
-      return NextResponse.json({ ok: true });
+      return ApiResponse.success({ ok: true });
     } else {
       await updateMessageActions(messageId, (m) => {
           if (m.actions && actionId) {
@@ -143,23 +145,23 @@ export async function POST(req: Request) {
           return { ...m, action: { ...m.action!, status: "failed" as const } };
         }
       );
-      return NextResponse.json({ error: "Action failed to execute via external API" }, { status: 500 });
+      return ApiResponse.error("Action failed to execute via external API", 500);
     }
   } catch (err) {
     console.error("Execute action error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return ApiResponse.error("Internal server error", 500);
   }
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withEncryption(async (req: Request) => {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return ApiResponse.error("Unauthorized", 401);
 
   try {
     const url = new URL(req.url);
     const messageId = url.searchParams.get("messageId");
     const actionId = url.searchParams.get("actionId");
-    if (!messageId) return NextResponse.json({ error: "Missing messageId" }, { status: 400 });
+    if (!messageId) return ApiResponse.error("Missing messageId", 400);
 
     await updateMessageActions(messageId, (m) => {
           if (m.actions && actionId) {
@@ -169,8 +171,8 @@ export async function DELETE(req: Request) {
           return { ...m, action: { ...m.action!, status: "failed" as const } };
       }
     );
-    return NextResponse.json({ ok: true });
+    return ApiResponse.success({ ok: true });
   } catch (err) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return ApiResponse.error("Internal server error", 500);
   }
-}
+});
