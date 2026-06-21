@@ -134,6 +134,26 @@ footer,
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Custom scrollbar utility class to override default browser styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

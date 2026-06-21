@@ -11,7 +11,8 @@ import { ChatMessageItem } from "@/components/chat/ChatMessageItem";
 import { ChatSuggestions } from "@/components/chat/ChatSuggestions";
 import { ChatInputForm } from "@/components/chat/ChatInputForm";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
-import { Bot, Loader2, Menu } from "lucide-react";
+import { useToast } from "@/components/ui/ToastProvider";
+import { Bot } from "lucide-react";
 import type { ChatSession } from "@/lib/types";
 
 // Dynamic suggestions will be generated based on context
@@ -36,6 +37,7 @@ export default function ChatPage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePlatform, setActivePlatform] = useState<string>("all");
+  const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -152,8 +154,10 @@ export default function ChatPage() {
       setSessions((prev) => [newSession, ...prev]);
       setActiveChatId(newSession.id);
       setSidebarOpen(false);
+      addToast("Created a new chat session", "success");
     } catch (err) {
       console.error("Failed to create chat:", err);
+      addToast("Failed to create chat", "error");
     }
   }
 
@@ -172,8 +176,10 @@ export default function ChatPage() {
         }
         return filtered;
       });
+      addToast("Chat deleted permanently", "info");
     } catch (err) {
       console.error("Failed to delete chat:", err);
+      addToast("Failed to delete chat", "error");
     }
   }
 
@@ -282,7 +288,7 @@ export default function ChatPage() {
           onClose={() => setSidebarOpen(false)}
           integrations={integrations}
         />
-        <div className="flex-1 flex flex-col max-w-6xl mx-auto px-3 sm:px-6 md:px-10 pt-2 pb-1 sm:py-6 md:py-8 h-full w-full relative">
+        <div className="flex-1 flex flex-col min-w-0 max-w-6xl mx-auto px-3 sm:px-6 md:px-10 pt-2 pb-1 sm:py-6 md:py-8 h-full w-full relative">
           <ChatHeader
             integrations={integrations}
             activePlatform={activePlatform}
@@ -290,7 +296,7 @@ export default function ChatPage() {
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           />
 
-          <div className={`flex-1 overflow-y-auto px-2 md:px-4 py-2 md:py-4 mb-1 md:mb-4 flex flex-col gap-6 scrollbar-hide rounded-3xl transition-colors duration-500 `}>
+          <div className={`flex-1 overflow-y-auto overflow-x-hidden px-2 md:px-4 py-2 md:py-4 mb-1 md:mb-4 flex flex-col gap-6 scrollbar-hide rounded-3xl transition-colors duration-500 `}>
             {loadingHistory ? (
               <div className="flex-1 flex flex-col gap-8 pt-8 px-4 w-full max-w-4xl mx-auto">
                 {/* Skeleton Message Right */}

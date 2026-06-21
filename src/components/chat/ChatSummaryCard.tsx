@@ -55,20 +55,20 @@ export function ChatSummaryCard({ todayLabel, statusItems, takeaways, activePlat
       </div>
 
       {/* Actions / Status Table */}
-      <div className="overflow-x-auto pb-1 scrollbar-hide">
-        <table className="w-full text-left border-collapse text-[10.5px] md:text-[13px] min-w-[450px]">
+      <div className="overflow-x-auto pb-1 scrollbar-hide w-full min-w-0">
+        <table className="w-full text-left border-collapse text-[10.5px] md:text-[13px] min-w-[450px] table-fixed">
           <thead>
             <tr className="border-b border-border-soft text-text-tertiary font-bold">
-              <th className="pb-2 font-semibold">Sender</th>
-              <th className="pb-2 font-semibold">Subject</th>
-              <th className="pb-2 font-semibold">Status / Action Needed</th>
+              <th className="pb-2 font-semibold w-[30%]">Sender</th>
+              <th className="pb-2 font-semibold w-[45%]">Subject</th>
+              <th className="pb-2 font-semibold w-[25%]">Status / Action Needed</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-soft/45 font-medium">
             {statusItems.map((item, index) => (
               <tr key={`${item.id}-${index}`} className="text-text-primary">
-                <td className="py-2.5 truncate max-w-[120px] font-semibold">{item.from}</td>
-                <td className="py-2.5 text-text-secondary truncate max-w-[220px]">{item.title}</td>
+                <td className="py-2.5 truncate font-semibold pr-2">{item.from}</td>
+                <td className="py-2.5 text-text-secondary truncate pr-2">{item.title}</td>
                 <td className="py-2.5">
                   <span
                     className={`text-[9.5px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border ${

@@ -6,11 +6,13 @@ import { api } from "@/lib/apiClient";
 import { PLATFORM_META } from "@/lib/platformMeta";
 import type { Integration, IntegrationPlatform } from "@/lib/types";
 import { CheckCircle2, Loader2, Plug, Settings, X } from "lucide-react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[] | null>(null);
   const [pending, setPending] = useState<IntegrationPlatform | null>(null);
   const [configPlatform, setConfigPlatform] = useState<IntegrationPlatform | null>(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     api.getIntegrations().then((r) => setIntegrations(r.integrations));
@@ -23,6 +25,7 @@ export default function IntegrationsPage() {
         await api.disconnectIntegration(platform);
         const r = await api.getIntegrations();
         setIntegrations(r.integrations);
+        addToast(`Disconnected ${PLATFORM_META[platform].label} successfully`, "info");
       } else {
         const res = await api.connectIntegration(platform);
         if (res.redirectUrl) {
@@ -31,7 +34,11 @@ export default function IntegrationsPage() {
         }
         const r = await api.getIntegrations();
         setIntegrations(r.integrations);
+        addToast(`Connected ${PLATFORM_META[platform].label} successfully`, "success");
       }
+    } catch (err: any) {
+      addToast(err.message || `Failed to toggle ${PLATFORM_META[platform].label}`, "error");
+      console.error(err);
     } finally {
       setPending(null);
     }

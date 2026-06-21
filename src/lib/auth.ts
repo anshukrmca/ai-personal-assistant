@@ -46,7 +46,12 @@ export async function getSession(): Promise<SessionPayload | null> {
     } catch (err2) {
       console.error("verifySessionCookie and verifyIdToken both failed:", err2);
       // Clear the corrupted/expired cookie so the user isn't stuck in a redirect loop
-      store.delete(SESSION_COOKIE);
+      // (Wrapped in try/catch because Server Components cannot modify cookies)
+      try {
+        store.delete(SESSION_COOKIE);
+      } catch (e) {
+        console.warn("Could not delete session cookie (likely in a Server Component context).");
+      }
       return null;
     }
   }

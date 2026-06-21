@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 
 export const metadata: Metadata = {
   title: "Anshu — Your Personal AI Assistant",
@@ -25,7 +26,9 @@ export default function RootLayout({
         `}} />
       </head>
       <body className="min-h-full flex flex-col bg-bg text-text-primary">
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

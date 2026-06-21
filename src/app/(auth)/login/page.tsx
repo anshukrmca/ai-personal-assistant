@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { auth, googleProvider, linkedinProvider } from "@/lib/firebase/client";
 import { api } from "@/lib/apiClient";
+import { useToast } from "@/components/ui/ToastProvider";
 
 declare global {
   interface Window {
@@ -31,6 +32,7 @@ const COUNTRIES = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const { addToast } = useToast();
   
   // Auth Method State
   const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
@@ -85,9 +87,11 @@ export default function LoginPage() {
       }
       
       console.log("[LOGIN] 5. Navigating to /dashboard...");
+      addToast("Successfully logged in!", "success");
       window.location.href = "/dashboard";
     } catch (err: any) {
       console.error("[LOGIN] ERROR:", err);
+      addToast(err.message || "Failed to sign in", "error");
       setError(err.message || "Failed to sign in");
     } finally {
       setLoading(false);
@@ -113,9 +117,11 @@ export default function LoginPage() {
         sessionStorage.setItem('ai_assistant_enc_iv', response.encryptionIv);
       }
       
+      addToast("Authentication successful!", "success");
       window.location.href = "/dashboard";
     } catch (err: any) {
       console.error(err);
+      addToast(err.message || "Authentication failed", "error");
       setError(err.message || "Authentication failed");
     } finally {
       setLoading(false);
@@ -146,8 +152,10 @@ export default function LoginPage() {
       const appVerifier = window.recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       setConfirmationResult(result);
+      addToast("Verification code sent!", "info");
     } catch (err: any) {
       console.error(err);
+      addToast(err.message || "Failed to send SMS", "error");
       setError(err.message || "Failed to send SMS");
     } finally {
       setLoading(false);
@@ -168,9 +176,11 @@ export default function LoginPage() {
         sessionStorage.setItem('ai_assistant_enc_iv', response.encryptionIv);
       }
       
+      addToast("Phone verified successfully!", "success");
       window.location.href = "/dashboard";
     } catch (err: any) {
       console.error(err);
+      addToast("Invalid verification code", "error");
       setError("Invalid verification code");
     } finally {
       setLoading(false);
