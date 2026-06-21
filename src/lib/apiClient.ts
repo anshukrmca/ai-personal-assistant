@@ -3,8 +3,8 @@ import { CryptoUtil } from "./crypto";
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   let finalBody = options?.body;
 
-  // 1. Encrypt outgoing body if it exists
-  if (finalBody && typeof finalBody === 'string') {
+  // 1. Encrypt outgoing body if it exists, but skip for auth routes since they establish the keys
+  if (finalBody && typeof finalBody === 'string' && !url.includes('/api/auth/')) {
     try {
       const key = typeof window !== "undefined" ? sessionStorage.getItem('ai_assistant_enc_key') : null;
       const iv = typeof window !== "undefined" ? sessionStorage.getItem('ai_assistant_enc_iv') : null;
@@ -89,12 +89,12 @@ export const api = {
     ),
 
   me: () =>
-    request<{ user: { userId: string; phoneNumber: string; name: string; avatar: string; email: string | null } | null }>(
+    request<{ user: { userId: string; phoneNumber: string; name: string; avatar: string; email: string | null; username: string | null; country: string | null; timezone: string | null; bio: string | null; } | null }>(
       "/api/auth/me"
     ),
 
-  updateProfile: (data: { name?: string; email?: string; avatar?: string }) =>
-    request<{ user: { userId: string; phoneNumber: string; name: string; avatar: string; email: string | null } }>(
+  updateProfile: (data: { name?: string; email?: string; avatar?: string; username?: string; country?: string; timezone?: string; bio?: string; phoneNumber?: string; }) =>
+    request<{ user: { userId: string; phoneNumber: string; name: string; avatar: string; email: string | null; username: string | null; country: string | null; timezone: string | null; bio: string | null; } }>(
       "/api/auth/me",
       { method: "POST", body: JSON.stringify(data) }
     ),

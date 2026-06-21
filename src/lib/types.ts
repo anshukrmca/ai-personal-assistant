@@ -39,7 +39,11 @@ export type IntegrationPlatform =
   | "outlook"
   | "discord"
   | "linkedin"
-  | "telegram";
+  | "telegram"
+  | "github"
+  | "notion"
+  | "drive"
+  | "trello";
 
 export type IntegrationStatus = "connected" | "disconnected" | "needs_reconnect";
 
@@ -59,7 +63,11 @@ export type ItemSource =
   | "outlook"
   | "discord"
   | "linkedin"
-  | "telegram";
+  | "telegram"
+  | "github"
+  | "notion"
+  | "drive"
+  | "trello";
 
 export type Priority = "high" | "medium" | "low";
 

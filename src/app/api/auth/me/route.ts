@@ -22,6 +22,10 @@ export const GET = withEncryption(async () => {
       name: user.name,
       avatar: user.avatar,
       email: user.email,
+      username: user.username,
+      country: user.country,
+      timezone: user.timezone,
+      bio: user.bio,
     },
   });
 });
@@ -34,12 +38,17 @@ export const POST = withEncryption(async (req: Request) => {
 
   try {
     const body = await req.json();
-    const { name, email, avatar } = body;
+    const { name, email, avatar, username, country, timezone, bio, phoneNumber } = body;
 
     const fieldsToUpdate: any = {};
     if (name !== undefined) fieldsToUpdate.name = name;
     if (email !== undefined) fieldsToUpdate.email = email;
     if (avatar !== undefined) fieldsToUpdate.avatar = avatar;
+    if (username !== undefined) fieldsToUpdate.username = username;
+    if (country !== undefined) fieldsToUpdate.country = country;
+    if (timezone !== undefined) fieldsToUpdate.timezone = timezone;
+    if (bio !== undefined) fieldsToUpdate.bio = bio;
+    if (phoneNumber !== undefined) fieldsToUpdate.phoneNumber = phoneNumber;
 
     const updatedUser = await updateUserProfile(session.userId, fieldsToUpdate);
     if (!updatedUser) {
@@ -53,6 +62,10 @@ export const POST = withEncryption(async (req: Request) => {
         name: updatedUser.name,
         avatar: updatedUser.avatar,
         email: updatedUser.email,
+        username: updatedUser.username,
+        country: updatedUser.country,
+        timezone: updatedUser.timezone,
+        bio: updatedUser.bio,
       },
     });
   } catch (error) {

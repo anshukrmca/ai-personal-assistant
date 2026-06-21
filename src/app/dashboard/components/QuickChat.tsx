@@ -1,10 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Sparkles, Loader2 } from "lucide-react";
+import { Send, Sparkles, Loader2, ChevronRight, AlertCircle, Calendar, Flame, MoreVertical } from "lucide-react";
 import { api } from "@/lib/apiClient";
 
-export default function QuickChat() {
+interface QuickChatProps {
+  highPriorityCount: number;
+  meetingsCount: number;
+}
+
+export default function QuickChat({ highPriorityCount, meetingsCount }: QuickChatProps) {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
     { role: "assistant", content: "Hi Anshu! Ask me anything about today's briefing, alerts, or meetings." },
   ]);
@@ -74,24 +79,72 @@ export default function QuickChat() {
     }
   }
 
+  // Helper to scroll to section
+  function scrollToSection(id: string) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
   return (
     <div className="rounded-3xl border border-border/80 bg-surface dark:bg-[#100d22]/75 dark:backdrop-blur-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-4">
+      
+      {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-border/40">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg bg-accent/15 flex items-center justify-center text-accent">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
           <h3 className="font-display font-bold text-[16px] text-text-primary tracking-tight">
-            Quick AI Agent
+            AI Assistant
           </h3>
         </div>
-        <span className="w-2.5 h-2.5 rounded-full bg-success pulse-dot" title="Assistant Ready" />
+        <button className="text-text-tertiary hover:text-text-primary transition-colors cursor-pointer">
+          <MoreVertical className="w-4 h-4" />
+        </button>
       </div>
+
+      {/* Interactive notification insights list panel */}
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => scrollToSection("my-tasks-card")}
+          className="flex items-center justify-between p-3 rounded-2xl border border-border/40 bg-surface-raised/40 hover:bg-surface-raised dark:bg-surface-raised/5 dark:hover:bg-surface-raised/10 hover:border-accent/25 transition-all text-left text-[12px] font-semibold text-text-primary cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <AlertCircle className="w-4 h-4 text-purple-500 shrink-0" />
+            <span className="truncate">You have {highPriorityCount} pending priority tasks</span>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+        </button>
+
+        <button
+          onClick={() => scrollToSection("upcoming-schedule-card")}
+          className="flex items-center justify-between p-3 rounded-2xl border border-border/40 bg-surface-raised/40 hover:bg-surface-raised dark:bg-surface-raised/5 dark:hover:bg-surface-raised/10 hover:border-accent/25 transition-all text-left text-[12px] font-semibold text-text-primary cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+            <span className="truncate">{meetingsCount} meetings are scheduled for today</span>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+        </button>
+
+        <div
+          className="flex items-center justify-between p-3 rounded-2xl border border-border/40 bg-surface-raised/20 dark:bg-surface-raised/5 text-left text-[12px] font-semibold text-text-primary"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Flame className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="truncate">Your focus score improved by 12% 🔥</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px bg-border/40 my-1" />
 
       {/* Message History area (scrollable) */}
       <div
         ref={scrollRef}
-        className="flex flex-col gap-3 h-[180px] overflow-y-auto pr-1.5 scrollbar-thin scroll-smooth"
+        className="flex flex-col gap-3 h-[180px] overflow-y-auto pr-1.5 custom-scrollbar scroll-smooth"
       >
         {messages.map((msg, i) => (
           <div
@@ -129,7 +182,7 @@ export default function QuickChat() {
           disabled={!input.trim() || sending}
           className="p-2.5 bg-gradient-to-tr from-[#7c3aed] to-[#9061f9] hover:shadow-md text-white rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:scale-100 shrink-0 cursor-pointer"
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-4.5 h-4.5" />
         </button>
       </form>
     </div>

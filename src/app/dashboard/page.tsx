@@ -6,22 +6,27 @@ import AppShell from "@/components/AppShell";
 import { api } from "@/lib/apiClient";
 import type { Briefing, FeedItem, Integration } from "@/lib/types";
 import {
-  RefreshCw,
-  ChevronRight,
   Plug,
   Sparkles,
   Bell,
+  Search,
+  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/components/ui/ToastProvider";
+import { ALL_PLATFORMS } from "@/lib/platformMeta";
 
 // Import modular dashboard components
-import ActivityGraph from "./components/ActivityGraph";
-import TasksCard from "./components/TasksCard";
-import QuickChat from "./components/QuickChat";
-import ConnectedApps from "./components/ConnectedApps";
-import CalendarSchedule from "./components/CalendarSchedule";
-import RemindersCard from "./components/RemindersCard";
 import WelcomeBanner from "./components/WelcomeBanner";
+import StatsCards from "./components/StatsCards";
+import ActivityGraph from "./components/ActivityGraph";
+import QuickChat from "./components/QuickChat";
+import TasksCard from "./components/TasksCard";
+import ConnectedApps from "./components/ConnectedApps";
+import GoalsCard from "./components/GoalsCard";
+import UpcomingSchedule from "./components/UpcomingSchedule";
+import ProductivityInsights from "./components/ProductivityInsights";
+import ActivityHeatmap from "./components/ActivityHeatmap";
+import RecentActivity from "./components/RecentActivity";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<{ name: string; avatar: string } | null>(null);
@@ -95,14 +100,7 @@ export default function DashboardPage() {
   }
 
   const meetings = items.filter((i) => i.type === "meeting");
-  const followUps = items.filter((i) => i.requiresFollowUp);
-
-  const today = new Date();
-  const todayFormatted = today.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  const alerts = items.filter((i) => i.priority === "high");
 
   // Dynamic goals calculations
   const actionableTasks = items.filter(
@@ -113,15 +111,15 @@ export default function DashboardPage() {
   const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
 
   const connectedAppsCount = integrations.filter((i) => i.status === "connected").length;
-  const appConnectionRate = connectedAppsCount > 0 ? Math.round((connectedAppsCount / 4) * 100) : 25;
+  const appConnectionRate = connectedAppsCount > 0 ? Math.round((connectedAppsCount / ALL_PLATFORMS.length) * 100) : 0;
 
   const highPriorityItems = items.filter((item) => item.priority === "high");
   const highPriorityCompleted = highPriorityItems.filter((item) => completedItems[item.id]).length;
-  const highPriorityRate = highPriorityItems.length > 0 ? Math.round((highPriorityCompleted / highPriorityItems.length) * 100) : 11;
+  const highPriorityRate = highPriorityItems.length > 0 ? Math.round((highPriorityCompleted / highPriorityItems.length) * 100) : 0;
 
   return (
     <AppShell>
-      <div className="relative min-h-screen bg-bg bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] dark:bg-[radial-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)] px-4 sm:px-6 md:px-10 py-8 flex flex-col transition-all duration-300">
+      <div className="relative min-h-screen bg-bg bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] dark:bg-[radial-gradient(rgba(255,255,255,0.035)_1px,transparent_1px)] px-2 sm:px-4 md:px-6 py-8 flex flex-col gap-8 transition-all duration-300">
         
         {loading && (
           <div className="space-y-6 flex-grow animate-pulse">
@@ -130,11 +128,10 @@ export default function DashboardPage() {
               <div className="space-y-2.5">
                 <div className="h-4 w-32 bg-surface-raised rounded-full" />
                 <div className="h-9 w-64 bg-surface rounded-2xl border border-border/40" />
-                <div className="h-4 w-48 bg-surface-raised rounded-full" />
               </div>
               <div className="flex gap-2 items-center self-start sm:self-center">
-                <div className="h-10 w-24 bg-surface rounded-full border border-border/40" />
-                <div className="h-10 w-28 bg-surface rounded-full border border-border/40" />
+                <div className="h-10 w-44 bg-surface rounded-xl border border-border/40" />
+                <div className="h-10 w-28 bg-surface rounded-xl border border-border/40" />
               </div>
             </div>
             
@@ -180,16 +177,29 @@ export default function DashboardPage() {
         {!loading && hasIntegrations && (
           <div className="space-y-8 flex-grow">
             
-            {/* Header Row */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-2 shrink-0">
-              <div>
-                <h1 className="font-display font-extrabold text-3xl sm:text-4xl tracking-tight text-text-primary">
+            {/* Header Row: Dashboard Title, Search Bar and Actions */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 shrink-0">
+              <div className="flex items-center gap-6 flex-wrap md:flex-nowrap">
+                <h1 className="font-display font-extrabold text-3xl sm:text-4xl tracking-tight text-text-primary shrink-0">
                   Dashboard
                 </h1>
+                
+                {/* Search Bar Input (Ctrl+K shortcut) */}
+                <div className="relative flex items-center bg-surface-raised/40 dark:bg-surface border border-border hover:border-border-soft rounded-2xl px-3 py-2 text-[12px] font-semibold text-text-secondary focus-within:border-accent/40 focus-within:ring-1 focus-within:ring-accent/15 transition-all w-[240px] sm:w-[280px] shrink-0 dark:bg-surface-raised/5">
+                  <Search className="w-4 h-4 text-text-tertiary mr-2 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Search anything..."
+                    className="bg-transparent focus:outline-none placeholder:text-text-tertiary text-text-primary w-full pr-10"
+                  />
+                  <kbd className="absolute right-3 px-1.5 py-0.5 rounded bg-surface-raised border border-border text-[9px] font-extrabold text-text-tertiary select-none pointer-events-none dark:bg-surface dark:border-white/5 font-sans leading-none">
+                    Ctrl K
+                  </kbd>
+                </div>
               </div>
 
               {/* Quick Action Pills */}
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-3 self-stretch md:self-center justify-end">
                 <Link
                   id="ask-ai-btn"
                   href="/chat"
@@ -205,13 +215,19 @@ export default function DashboardPage() {
                   <Plug className="w-3.5 h-3.5" />
                   Connect Apps
                 </Link>
+                
+                {/* Alert Notifications Bell with Red Badge */}
                 <Link
-                  id="view-alerts-btn"
+                  id="alerts-bell-btn"
                   href="/alerts"
-                  className="inline-flex items-center gap-2 bg-surface hover:bg-surface-raised text-text-primary font-bold text-[13.5px] rounded-full px-5 py-2.5 border border-border shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="relative p-2.5 rounded-full border border-border bg-surface hover:bg-surface-raised cursor-pointer transition-all hover:scale-105"
                 >
-                  <Bell className="w-3.5 h-3.5" />
-                  Alerts
+                  <Bell className="w-4.5 h-4.5 text-text-secondary" />
+                  {alerts.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger text-white text-[9.5px] font-black rounded-full flex items-center justify-center animate-pulse">
+                      {alerts.length > 9 ? "9+" : alerts.length}
+                    </span>
+                  )}
                 </Link>
               </div>
             </div>
@@ -225,105 +241,64 @@ export default function DashboardPage() {
               onRefresh={handleRefresh}
             />
 
-            {/* Layout Grid */}
+            {/* Summary Row Stats Cards */}
+            <StatsCards items={items} completedItemsCount={completedTasksCount} />
+
+            {/* Main Layout Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
               
               {/* Left Column (spans 2 on desktop) */}
               <div className="lg:col-span-2 space-y-8">
                 
-                {/* 1. Activity Graph Card */}
-                <ActivityGraph items={items} />
+                {/* 1. Activity Overview Graph */}
+                <ActivityGraph items={items} completionRate={taskCompletionRate} />
 
-                {/* 2. My Tasks Card */}
+                {/* 2. My Tasks Checklists Card */}
                 <TasksCard
                   items={actionableTasks}
                   completedItems={completedItems}
                   toggleTask={toggleTask}
                 />
 
-                {/* 3. My Goals Card */}
-                <div className="rounded-3xl border border-border/80 bg-surface dark:bg-[#100d22]/75 dark:backdrop-blur-xl p-6 shadow-sm flex flex-col gap-5 hover:shadow-md transition-all duration-300">
-                  <div className="pb-2 border-b border-border/40">
-                    <h3 className="font-display font-bold text-[17px] text-text-primary tracking-tight">
-                      My Goals
-                    </h3>
-                  </div>
-
-                  <div className="flex flex-col gap-5">
-                    {/* Goal 1 */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[13.5px]">
-                        <div>
-                          <h4 className="font-bold text-text-primary">Briefing Task Completion</h4>
-                          <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider font-display">Daily Action Checklist</p>
-                        </div>
-                        <span className="font-display font-extrabold text-accent">{taskCompletionRate}%</span>
-                      </div>
-                      <div className="h-2 w-full bg-surface-raised dark:bg-surface rounded-full overflow-hidden border border-border/20">
-                        <div
-                          className="h-full bg-gradient-to-r from-accent to-[#9061f9] rounded-full transition-all duration-500 ease-out"
-                          style={{ width: `${taskCompletionRate}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Goal 2 */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[13.5px]">
-                        <div>
-                          <h4 className="font-bold text-text-primary">Platform Connectivity Strength</h4>
-                          <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider font-display">Connected Core Integrations</p>
-                        </div>
-                        <span className="font-display font-extrabold text-info">{appConnectionRate}%</span>
-                      </div>
-                      <div className="h-2 w-full bg-surface-raised dark:bg-surface rounded-full overflow-hidden border border-border/20">
-                        <div
-                          className="h-full bg-gradient-to-r from-info to-[#60a5fa] rounded-full transition-all duration-500 ease-out"
-                          style={{ width: `${appConnectionRate}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Goal 3 */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[13.5px]">
-                        <div>
-                          <h4 className="font-bold text-text-primary">Priority Alerts Cleared</h4>
-                          <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider font-display">High Priority Feed Items Resolved</p>
-                        </div>
-                        <span className="font-display font-extrabold text-success">{highPriorityRate}%</span>
-                      </div>
-                      <div className="h-2 w-full bg-surface-raised dark:bg-surface rounded-full overflow-hidden border border-border/20">
-                        <div
-                          className="h-full bg-gradient-to-r from-success to-emerald-400 rounded-full transition-all duration-500 ease-out"
-                          style={{ width: `${highPriorityRate}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* 3. My Goals Progress Card */}
+                <GoalsCard
+                  taskCompletionRate={taskCompletionRate}
+                  appConnectionRate={appConnectionRate}
+                  highPriorityRate={highPriorityRate}
+                />
 
               </div>
 
               {/* Right Column (spans 1 on desktop) */}
               <div className="space-y-8">
                 
-                {/* 1. Quick AI Chat Widget */}
-                <QuickChat />
+                {/* 1. AI Assistant Insight Widget */}
+                <QuickChat
+                  highPriorityCount={alerts.length}
+                  meetingsCount={meetings.length}
+                />
 
                 {/* 2. Connected Platforms Card */}
                 <ConnectedApps integrations={integrations} />
 
-                {/* 3. Calendar Schedule Card */}
-                <CalendarSchedule meetings={meetings} />
-
-                {/* 4. Reminders Card */}
-                <RemindersCard
-                  followUps={followUps}
-                  toggleTask={toggleTask}
-                />
+                {/* 3. Upcoming Schedule Card */}
+                <UpcomingSchedule meetings={meetings} />
 
               </div>
+
+            </div>
+
+            {/* Bottom Row Grid (3 columns on desktop, stacked on mobile) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-2">
+              
+              {/* 1. Productivity Insights Donut Card */}
+              <ProductivityInsights items={items} />
+
+              {/* 2. Activity Heatmap Density Grid Card */}
+              <ActivityHeatmap items={items} />
+
+              {/* 3. Recent Activity Timeline Log Card */}
+              <RecentActivity items={items} completedItems={completedItems} />
 
             </div>
 

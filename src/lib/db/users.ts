@@ -39,7 +39,7 @@ export async function createUser(
   const now = new Date().toISOString();
   const user: User = {
     userId: data.userId || uuid(),
-    phoneNumber: data.phoneNumber || "",
+    phoneNumber: data.phoneNumber || `NONE_${data.userId || Date.now()}`,
     authProvider,
     name: data.name || "New User",
     avatar: data.avatar || "🙂",
@@ -66,7 +66,7 @@ export async function touchLastLogin(userId: string): Promise<void> {
 
 export async function updateUserProfile(
   userId: string,
-  fields: Partial<Pick<User, "name" | "email" | "avatar">>
+  fields: Partial<Pick<User, "name" | "email" | "avatar" | "username" | "country" | "timezone" | "bio" | "phoneNumber">>
 ): Promise<User | null> {
   const db = await getDb();
   const result = await db.collection(COLLECTION).findOneAndUpdate(

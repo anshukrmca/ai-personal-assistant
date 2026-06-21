@@ -133,11 +133,19 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Combine country code and phone number, stripping any inner whitespace or existing +
-    const rawPhone = phoneNumber.replace(/\D/g, "");
-    const formattedPhone = `${countryCode}${rawPhone}`;
+    // Combine country code and phone number
+    // If user typed the '+' sign directly into the input, respect that instead of double-prepending
+    let formattedPhone = "";
+    if (phoneNumber.trim().startsWith("+")) {
+      formattedPhone = "+" + phoneNumber.replace(/\D/g, "");
+    } else {
+      const rawPhone = phoneNumber.replace(/\D/g, "");
+      formattedPhone = `${countryCode}${rawPhone}`;
+    }
 
-    if (rawPhone.length < 5) {
+    console.log("[LOGIN] Attempting to send verification code to exact number:", formattedPhone);
+
+    if (formattedPhone.length < 8) {
       setError("Please enter a valid phone number.");
       setLoading(false);
       return;
@@ -155,8 +163,12 @@ export default function LoginPage() {
       addToast("Verification code sent!", "info");
     } catch (err: any) {
       console.error(err);
-      addToast(err.message || "Failed to send SMS", "error");
-      setError(err.message || "Failed to send SMS");
+      let friendlyMessage = err.message || "Failed to send SMS";
+      if (err.code === "auth/billing-not-enabled" || String(err).includes("billing-not-enabled")) {
+        friendlyMessage = "Firebase SMS authentication requires a paid billing plan (Blaze Plan). Please use Google, LinkedIn, or Email login instead, or register a Test Phone Number in your Firebase Console.";
+      }
+      addToast(friendlyMessage, "error");
+      setError(friendlyMessage);
     } finally {
       setLoading(false);
     }

@@ -2,16 +2,14 @@
 
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
-import { PLATFORM_META } from "@/lib/platformMeta";
-import type { Integration, IntegrationPlatform } from "@/lib/types";
+import type { Integration } from "@/lib/types";
+import { PLATFORM_META, ALL_PLATFORMS } from "@/lib/platformMeta";
 
 interface ConnectedAppsProps {
   integrations: Integration[];
 }
 
 export default function ConnectedApps({ integrations }: ConnectedAppsProps) {
-  const platforms: IntegrationPlatform[] = ["gmail", "whatsapp", "slack", "google_calendar"];
-
   return (
     <div className="rounded-3xl border border-border/80 bg-surface dark:bg-[#100d22]/75 dark:backdrop-blur-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-4">
       <div className="flex justify-between items-center pb-2 border-b border-border/40">
@@ -26,16 +24,18 @@ export default function ConnectedApps({ integrations }: ConnectedAppsProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {platforms.map((platformKey) => {
-          const meta = PLATFORM_META[platformKey];
-          const Icon = meta.icon;
-          const matched = integrations.find((i) => i.platform === platformKey);
+      <div className="grid grid-cols-2 gap-4 overflow-y-auto max-h-[340px] pr-2 pb-2">
+        {ALL_PLATFORMS.map((key) => {
+          const platform = PLATFORM_META[key];
+          const Icon = platform.icon;
+          
+          // Determine status dynamically
+          const matched = integrations.find((i) => i.platform === key);
           const connected = matched ? matched.status === "connected" : false;
 
           return (
             <Link
-              key={platformKey}
+              key={key}
               href="/integrations"
               className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col items-center text-center gap-3 relative group ${
                 connected
@@ -46,16 +46,16 @@ export default function ConnectedApps({ integrations }: ConnectedAppsProps) {
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm border border-border/40 transition-transform group-hover:scale-110"
                 style={{
-                  background: `${meta.color}0d`,
-                  borderColor: `${meta.color}20`,
+                  background: `${platform.color}0d`,
+                  borderColor: `${platform.color}20`,
                 }}
               >
-                <Icon className="w-6 h-6" style={{ color: meta.color }} />
+                <Icon className="w-6 h-6" style={{ color: platform.color }} />
               </div>
 
               <div className="space-y-0.5">
                 <p className="text-[13px] font-extrabold text-text-primary leading-tight">
-                  {meta.label}
+                  {platform.label}
                 </p>
                 <span
                   className={`inline-flex items-center gap-1 text-[10px] font-bold ${
@@ -67,7 +67,7 @@ export default function ConnectedApps({ integrations }: ConnectedAppsProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" /> Connected
                     </>
                   ) : (
-                    "Offline"
+                    "Not Connected"
                   )}
                 </span>
               </div>

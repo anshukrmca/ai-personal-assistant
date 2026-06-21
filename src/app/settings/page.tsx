@@ -4,8 +4,10 @@ import React, { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { api } from "@/lib/apiClient";
 import { User, Mail, Phone, Smile, Save, Loader2, Check } from "lucide-react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function SettingsPage() {
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -14,6 +16,10 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
   const [avatar, setAvatar] = useState("A");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [username, setUsername] = useState("");
+  const [country, setCountry] = useState("");
+  const [timezone, setTimezone] = useState("");
+  const [bio, setBio] = useState("");
 
   useEffect(() => {
     api.me().then((res) => {
@@ -22,6 +28,10 @@ export default function SettingsPage() {
         setEmail(res.user.email || "");
         setAvatar(res.user.avatar || "A");
         setPhoneNumber(res.user.phoneNumber || "");
+        setUsername(res.user.username || "");
+        setCountry(res.user.country || "");
+        setTimezone(res.user.timezone || "");
+        setBio(res.user.bio || "");
       }
       setLoading(false);
     });
@@ -33,11 +43,18 @@ export default function SettingsPage() {
     setSaved(false);
     
     try {
-      await api.updateProfile({ name, email, avatar });
+      const payload: any = { name, email, avatar, username, country, timezone, bio };
+      if (!phoneNumber.startsWith("NONE_") && phoneNumber.trim() !== "") {
+        payload.phoneNumber = phoneNumber;
+      }
+      
+      await api.updateProfile(payload);
       setSaved(true);
+      addToast("Profile updated successfully!", "success");
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update profile", err);
+      addToast(err.message || "Failed to update profile", "error");
     } finally {
       setSaving(false);
     }
@@ -45,7 +62,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="px-4 md:px-6 py-8 max-w-3xl mx-auto w-full">
+      <div className="px-4 md:px-6 py-8  w-full">
         <h1 className="text-2xl font-bold text-text-primary mb-2">Account Settings</h1>
         <p className="text-text-secondary text-sm mb-8">Manage your profile information and preferences.</p>
 
@@ -100,6 +117,19 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="block text-[13px] font-bold text-text-secondary mb-2 flex items-center gap-2">
+                    <User className="w-4 h-4" /> Username
+                  </label>
+                  <input 
+                    type="text" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your username"
+                    className="w-full bg-surface-raised border border-border rounded-xl px-4 py-3 text-[14px] font-medium text-text-primary placeholder:text-text-tertiary focus:border-accent outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-bold text-text-secondary mb-2 flex items-center gap-2">
                     <Mail className="w-4 h-4" /> Email Address
                   </label>
                   <input 
@@ -113,15 +143,58 @@ export default function SettingsPage() {
 
                 <div className="md:col-span-2">
                   <label className="block text-[13px] font-bold text-text-secondary mb-2 flex items-center gap-2">
-                    <Phone className="w-4 h-4" /> Phone Number (Read-only)
+                    <Phone className="w-4 h-4" /> Phone Number {!phoneNumber.startsWith("NONE_") && phoneNumber !== "" ? "(Read-only)" : ""}
                   </label>
                   <input 
                     type="text" 
-                    value={phoneNumber}
-                    disabled
-                    className="w-full bg-surface-raised/50 border border-border/50 rounded-xl px-4 py-3 text-[14px] font-medium text-text-tertiary cursor-not-allowed"
+                    value={phoneNumber.startsWith("NONE_") ? "" : phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    disabled={!phoneNumber.startsWith("NONE_") && phoneNumber !== ""}
+                    placeholder="e.g. +1 650-555-1234"
+                    className={`w-full bg-surface-raised border rounded-xl px-4 py-3 text-[14px] font-medium transition-colors ${!phoneNumber.startsWith("NONE_") && phoneNumber !== "" ? "border-border/50 text-text-tertiary cursor-not-allowed bg-surface-raised/50" : "border-border text-text-primary placeholder:text-text-tertiary focus:border-accent outline-none"}`}
                   />
-                  <p className="text-[11px] text-text-tertiary mt-2">Your phone number is used as your primary identifier and cannot be changed here.</p>
+                  {!phoneNumber.startsWith("NONE_") && phoneNumber !== "" && (
+                    <p className="text-[11px] text-text-tertiary mt-2">Your phone number is used as your primary identifier and cannot be changed here.</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-bold text-text-secondary mb-2 flex items-center gap-2">
+                    Country
+                  </label>
+                  <input 
+                    type="text" 
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="e.g. United States"
+                    className="w-full bg-surface-raised border border-border rounded-xl px-4 py-3 text-[14px] font-medium text-text-primary placeholder:text-text-tertiary focus:border-accent outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-bold text-text-secondary mb-2 flex items-center gap-2">
+                    Timezone
+                  </label>
+                  <input 
+                    type="text" 
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    placeholder="e.g. America/Los_Angeles"
+                    className="w-full bg-surface-raised border border-border rounded-xl px-4 py-3 text-[14px] font-medium text-text-primary placeholder:text-text-tertiary focus:border-accent outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-[13px] font-bold text-text-secondary mb-2 flex items-center gap-2">
+                    Bio
+                  </label>
+                  <textarea 
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Tell us a little bit about yourself"
+                    rows={3}
+                    className="w-full bg-surface-raised border border-border rounded-xl px-4 py-3 text-[14px] font-medium text-text-primary placeholder:text-text-tertiary focus:border-accent outline-none transition-colors custom-scrollbar resize-none"
+                  />
                 </div>
               </div>
 

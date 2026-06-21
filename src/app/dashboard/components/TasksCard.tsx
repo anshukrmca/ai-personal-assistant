@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Check } from "lucide-react";
+import { CheckCircle2, ChevronRight, Check, Plus } from "lucide-react";
 import { PLATFORM_META } from "@/lib/platformMeta";
 import type { FeedItem, IntegrationPlatform } from "@/lib/types";
 
@@ -29,6 +29,10 @@ function timeAgo(iso: string): string {
 export default function TasksCard({ items, completedItems, toggleTask }: TasksCardProps) {
   const [activeTab, setActiveTab] = useState<"in_progress" | "completed">("in_progress");
 
+  // Calculate counts for each tab dynamically
+  const inProgressCount = items.filter((i) => !completedItems[i.id]).length;
+  const completedCount = items.filter((i) => completedItems[i.id]).length;
+
   // Filter tasks based on selected tab status
   const filteredTasks = items.filter((item) => {
     const isCompleted = !!completedItems[item.id];
@@ -36,18 +40,21 @@ export default function TasksCard({ items, completedItems, toggleTask }: TasksCa
   });
 
   return (
-    <div className="rounded-3xl border border-border/80 bg-surface dark:bg-[#100d22]/75 dark:backdrop-blur-xl p-6 shadow-sm flex flex-col gap-5 hover:shadow-md transition-all duration-300">
+    <div
+      id="my-tasks-card"
+      className="rounded-3xl border border-border/80 bg-surface dark:bg-[#100d22]/75 dark:backdrop-blur-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-5 scroll-mt-24"
+    >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-border/40">
         <div className="flex items-center gap-3">
           <h3 className="font-display font-bold text-[17px] text-text-primary tracking-tight">
             My Tasks
           </h3>
           <span className="text-[11.5px] font-extrabold px-2.5 py-0.5 rounded-full bg-accent-soft text-accent">
-            {filteredTasks.length} {filteredTasks.length === 1 ? "item" : "items"}
+            {items.length} {items.length === 1 ? "item" : "items"}
           </span>
         </div>
 
-        {/* Action Status Tabs */}
+        {/* Action Status Tabs with Counters */}
         <div className="flex bg-surface-raised dark:bg-surface p-1 rounded-full border border-border/50 shrink-0 self-start sm:self-center">
           <button
             onClick={() => setActiveTab("in_progress")}
@@ -57,7 +64,7 @@ export default function TasksCard({ items, completedItems, toggleTask }: TasksCa
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
-            In Progress
+            In Progress ({inProgressCount})
           </button>
           <button
             onClick={() => setActiveTab("completed")}
@@ -67,12 +74,12 @@ export default function TasksCard({ items, completedItems, toggleTask }: TasksCa
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
-            Completed
+            Completed ({completedCount})
           </button>
         </div>
       </div>
 
-      {/* Task List container, with fixed max-height and custom scrollbar */}
+      {/* Task List container */}
       <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1.5 custom-scrollbar">
         {filteredTasks.map((item) => {
           const platform = item.source as IntegrationPlatform;
@@ -154,6 +161,14 @@ export default function TasksCard({ items, completedItems, toggleTask }: TasksCa
           </div>
         )}
       </div>
+
+      {/* Add New Task button row */}
+      <Link
+        href="/chat?q=Create a new task to "
+        className="py-3 px-4 rounded-2xl border border-dashed border-border/80 hover:border-accent/40 bg-surface hover:bg-surface-raised/20 text-center text-[13px] font-extrabold text-text-secondary hover:text-accent transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+      >
+        <Plus className="w-4 h-4 stroke-[3]" /> Add New Task
+      </Link>
     </div>
   );
 }

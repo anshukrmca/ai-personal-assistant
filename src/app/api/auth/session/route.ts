@@ -32,16 +32,27 @@ export async function POST(req: Request) {
     let isNewUser = false;
 
     if (!user) {
+      let defaultUsername: string | undefined = undefined;
+      if (email) {
+        defaultUsername = email.split('@')[0];
+      }
+
       user = await createUser(provider, {
         userId: uid,
         phoneNumber: phone_number || "",
         email: email || null,
         name: name || "New User",
-        avatar: picture || "🙂"
+        avatar: picture || "🙂",
+        username: defaultUsername
       });
       isNewUser = true;
       await getIntegrationsForUser(uid);
     } else {
+      if (!user.username && user.email) {
+        const defaultUsername = user.email.split('@')[0];
+        import("@/lib/db/users").then(m => m.updateUserProfile(uid, { username: defaultUsername }));
+        user.username = defaultUsername;
+      }
       import("@/lib/db/users").then(m => m.touchLastLogin(uid));
     }
 

@@ -36,6 +36,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [theme, setTheme] = useState('light');
 
+  const [user, setUser] = useState<{name: string, email: string | null, avatar: string} | null>(null);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "light";
     setTheme(savedTheme);
@@ -44,6 +46,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.classList.remove("dark");
     }
+
+    api.me().then(res => {
+      if (res.user) setUser(res.user);
+    }).catch(console.error);
   }, []);
 
   function toggleTheme() {
@@ -98,26 +104,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Navigation items */}
         <nav className="flex flex-col gap-1.5 flex-1 relative">
           {NAV_ITEMS.map((item) => {
-            const active = pathname?.startsWith(item.href);
+            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group relative flex items-center rounded-xl transition-all duration-200 ${
-                  isCollapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3'
+                className={`flex items-center group rounded-xl transition-all duration-200 cursor-pointer ${
+                  isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'
                 } ${
-                  active
-                    ? "bg-accent/10 text-accent font-bold"
-                    : "text-text-secondary hover:bg-surface-raised hover:text-text-primary font-semibold"
+                  isActive 
+                    ? "bg-accent text-[#15110a] shadow-sm shadow-accent/20" 
+                    : "text-text-secondary hover:bg-surface-raised hover:text-text-primary"
                 }`}
               >
-                <Icon className={`shrink-0 transition-transform ${active && !isCollapsed ? 'scale-110' : ''} ${isCollapsed ? 'w-[22px] h-[22px] group-hover:scale-110' : 'w-[18px] h-[18px]'}`} strokeWidth={active ? 2.5 : 2} />
-                {!isCollapsed && <span className="text-[14px] truncate">{item.label}</span>}
+                <Icon className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'} ${isCollapsed ? 'ml-0' : ''}`} />
+                {!isCollapsed && (
+                  <span className="font-bold text-[14.5px] whitespace-nowrap">{item.label}</span>
+                )}
                 
-                {/* Custom Animated Tooltip */}
+                {/* Tooltip for Collapsed State */}
                 {isCollapsed && (
-                  <div className="absolute left-full ml-4 px-3 py-2 bg-slate-800 text-white text-[12px] font-bold rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap shadow-xl z-50 flex items-center pointer-events-none translate-x-1 group-hover:translate-x-0">
+                  <div className="absolute left-full ml-5 px-3 py-2 bg-slate-800 text-white text-[12px] font-bold rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap shadow-xl z-50 flex items-center pointer-events-none translate-x-1 group-hover:translate-x-0">
                     <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-slate-800 rotate-45 rounded-[2px]"></div>
                     {item.label}
                   </div>
@@ -127,26 +135,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Bottom Panel */}
-        <div className="mt-auto pt-5 border-t border-border/50 flex flex-col gap-3 relative shrink-0">
-          
-          {/* Profile Menu Dropdown */}
+        {/* User Profile / Settings (Desktop) */}
+        <div className="mt-auto pt-6 relative">
+          {/* Settings Menu Dropdown */}
+          <AnimatePresence>
           {isProfileMenuOpen && (
-            <div className={`absolute bottom-full mb-3 bg-surface border border-border-soft rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex flex-col p-2 z-50 transition-all origin-bottom-left animate-in fade-in slide-in-from-bottom-2 ${isCollapsed ? 'left-2 w-48' : 'left-0 right-0'}`}>
-              <div className="px-3 py-2 mb-1 border-b border-border/50">
-                <p className="text-[11px] font-bold text-text-tertiary uppercase tracking-wider">Preferences</p>
-              </div>
-              
+            <div className="absolute bottom-[calc(100%+12px)] left-0 w-full bg-surface border border-border/80 rounded-2xl shadow-xl flex flex-col p-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
               <Link 
-                href="/settings"
+                href="/settings" 
                 onClick={() => setIsProfileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13.5px] font-bold cursor-pointer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13.5px] font-bold"
               >
                 <Settings className="w-4 h-4" />
                 Account Settings
               </Link>
               
-              <button 
+              <button
                 onClick={toggleTheme}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-raised text-text-secondary hover:text-text-primary transition-colors text-[13.5px] font-bold cursor-pointer"
               >
@@ -165,14 +169,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           )}
+          </AnimatePresence>
 
           {/* User profile toggle */}
           <button 
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className={`flex items-center transition-all hover:bg-surface-raised rounded-xl cursor-pointer group ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-2 py-2'} ${isProfileMenuOpen ? 'bg-surface-raised' : ''}`}
+            className={`flex items-center transition-all hover:bg-surface-raised rounded-xl cursor-pointer group w-full ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-2 py-2'} ${isProfileMenuOpen ? 'bg-surface-raised' : ''}`}
           >
             <div className="w-10 h-10 rounded-full bg-surface-raised flex items-center justify-center font-display font-bold text-text-primary shrink-0 border border-border/60 shadow-sm relative overflow-hidden">
-              <span className="relative z-10">A</span>
+              <span className="relative z-10">{user?.avatar?.substring(0, 2) || "A"}</span>
               <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent"></div>
               
               {/* User Profile Tooltip for Collapsed State */}
@@ -187,10 +192,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {!isCollapsed && (
               <>
                 <div className="min-w-0 flex-1 text-left">
-                  <p className="text-[13px] font-bold text-text-primary truncate">Anshu</p>
-                  <p className="text-[11.5px] text-text-tertiary truncate font-medium">anshu@intelligent.agent</p>
+                  <p className="text-[13px] font-bold text-text-primary truncate">{user?.name || "User"}</p>
+                  <p className="text-[11.5px] text-text-tertiary truncate font-medium">{user?.email || "No Email"}</p>
                 </div>
-                <ChevronUp className={`w-4 h-4 text-text-tertiary transition-transform duration-200 ${isProfileMenuOpen ? '' : 'rotate-180'}`} />
+                <ChevronUp className={`w-4 h-4 text-text-tertiary transition-transform duration-200 shrink-0 ${isProfileMenuOpen ? '' : 'rotate-180'}`} />
               </>
             )}
           </button>
@@ -215,7 +220,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className={`flex items-center justify-center w-8 h-8 rounded-full bg-surface-raised border border-border/60 shadow-sm relative overflow-hidden transition-all duration-200 cursor-pointer shrink-0 ${isProfileMenuOpen ? 'ring-2 ring-accent' : ''}`}
             >
-              <span className="relative z-10 text-[11px] font-bold text-text-primary">A</span>
+              <span className="relative z-10 text-[11px] font-bold text-text-primary">{user?.avatar?.substring(0, 2) || "A"}</span>
               <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent"></div>
             </button>
 
@@ -236,8 +241,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     className="absolute top-full right-0 mt-3 w-52 bg-surface border border-border/80 rounded-2xl shadow-xl flex flex-col p-2 z-50 overflow-hidden origin-top-right"
                   >
                     <div className="px-3 py-2 mb-1 border-b border-border/50">
-                      <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Anshu</p>
-                      <p className="text-[11.5px] text-text-tertiary truncate font-medium">anshu@intelligent.agent</p>
+                      <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{user?.name || "User"}</p>
+                      <p className="text-[11.5px] text-text-tertiary truncate font-medium">{user?.email || "No Email"}</p>
                     </div>
                     
                     <Link 
