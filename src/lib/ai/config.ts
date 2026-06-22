@@ -7,7 +7,7 @@ export function detectProvider(): Provider {
 
 export const PROVIDER = detectProvider();
 
-export const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openrouter/free";
+export const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "meta-llama/llama-3-8b-instruct:free";
 
 export function getProviderName(): string {
   if (PROVIDER === "anthropic") return "Anthropic Claude";
