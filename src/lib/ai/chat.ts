@@ -225,6 +225,7 @@ export async function answerChatQuestion(
     );
   } catch (err) {
     console.warn("[aiService] answerChatQuestion failed:", err);
-    return "I'm sorry, I'm having trouble connecting to the AI provider right now. Please check your API keys or try again later.";
+    const msg = err instanceof Error ? err.message : String(err);
+    return `AI Connection Error: ${msg}\n\nMake sure your API keys are added in Vercel Settings -> Environment Variables, and that you clicked Redeploy!`;
   }
 }
