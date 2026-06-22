@@ -21,9 +21,9 @@ function getAdminApp(): App {
   }
 
   // Fallback to env vars
-  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
+  const projectId = (process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "").replace(/^["']|["']$/g, '');
+  const clientEmail = (process.env.FIREBASE_CLIENT_EMAIL || "").replace(/^["']|["']$/g, '');
+  let privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY || "";
 
   if (!projectId || !clientEmail || !privateKeyRaw) {
     throw new Error(
@@ -31,7 +31,8 @@ function getAdminApp(): App {
     );
   }
 
-  const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+  // Handle potential quotes around the private key and fix newlines
+  const privateKey = privateKeyRaw.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
   console.log('Firebase Admin: Loaded from env vars, projectId:', projectId);
 
   return initializeApp({

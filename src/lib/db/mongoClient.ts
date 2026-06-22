@@ -1,12 +1,13 @@
 import { MongoClient } from "mongodb";
 import { setupIndexes } from "./setupIndexes";
 
-const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+let rawUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 
-if (!uri) {
+if (!rawUri) {
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI" or "MONGO_URI"');
 }
 
+const uri = rawUri.replace(/^["']|["']$/g, '').trim();
 const options = { family: 4 };
 
 let client: MongoClient;
