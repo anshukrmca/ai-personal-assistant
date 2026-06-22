@@ -31,8 +31,17 @@ function getAdminApp(): App {
     );
   }
 
-  // Handle potential quotes around the private key and fix newlines
-  const privateKey = privateKeyRaw.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
+  // Handle potential quotes around the private key and fix escaped newlines
+  let privateKey = privateKeyRaw.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
+
+  // If newlines were lost (e.g. pasted into a single-line input), reconstruct them
+  if (!privateKey.includes('\n')) {
+    const match = privateKey.match(/(-----BEGIN PRIVATE KEY-----)(.+?)(-----END PRIVATE KEY-----)/);
+    if (match) {
+      const body = match[2].replace(/\s+/g, '');
+      privateKey = `${match[1]}\n${body}\n${match[3]}`;
+    }
+  }
   console.log('Firebase Admin: Loaded from env vars, projectId:', projectId);
 
   return initializeApp({
