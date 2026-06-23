@@ -76,6 +76,8 @@ export async function answerChatQuestion(
     ? `The current local date is ${fullDateStr} and the time is ${localTime} (Timezone: ${timeZone}).\n\nREFERENCE CALENDAR (Next 7 Days):\n- ${next7Days}\n\nCRITICAL: When formatting dates in your actions (like the 'date' field in calendar_agenda_view), you MUST match the day of the week exactly as shown in this reference calendar. DO NOT guess.`
     : `Today is ${fullDateStr} (UTC). Calculate exact absolute ISO datetime strings relative to this current time.\n\nREFERENCE CALENDAR (Next 7 Days):\n- ${next7Days}`;
 
+// Prompt for system
+
   const systemPrompt = 
     `You are Anshu, a personal AI assistant. The user has connected their apps and you have access to their recent data. Answer questions and respond to the user conversationally. Be concise and helpful. Use ONLY the connected data provided to answer factual questions about their data. If the data doesn't contain the answer, say so honestly.\n\n` +
     `Current Time Context: ${timeContext}\n\n` +
